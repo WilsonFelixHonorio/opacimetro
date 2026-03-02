@@ -3,8 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Laudo } from "@/lib/laudos-data";
-import { Search, Truck } from "lucide-react";
+import { Laudo, SYSCON_BASE_URL } from "@/lib/laudos-data";
+import { Search, Truck, Tag, Gauge, FileText, Eye } from "lucide-react";
 
 interface LaudosTableProps {
   laudos: Laudo[];
@@ -54,27 +54,73 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
           </Select>
         </div>
       </div>
-      <div className="overflow-auto max-h-[500px]">
+      <div className="overflow-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Nº</TableHead>
-              <TableHead className="font-semibold">Data</TableHead>
-              <TableHead className="font-semibold">Veículo</TableHead>
-              <TableHead className="font-semibold">Placa</TableHead>
-              <TableHead className="font-semibold text-right">Km</TableHead>
+              <TableHead className="font-semibold w-[100px]">Nº / Data</TableHead>
+              <TableHead className="font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Truck className="h-3.5 w-3.5" /> Veículo
+                </span>
+              </TableHead>
+              <TableHead className="font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5" /> Placa
+                </span>
+              </TableHead>
+              <TableHead className="font-semibold text-right">
+                <span className="flex items-center gap-1.5 justify-end">
+                  <Gauge className="h-3.5 w-3.5" /> Km
+                </span>
+              </TableHead>
+              <TableHead className="font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5" /> Tipo
+                </span>
+              </TableHead>
               <TableHead className="font-semibold text-center">Resultado</TableHead>
+              <TableHead className="font-semibold text-center w-[80px]">
+                <span className="flex items-center gap-1.5 justify-center">
+                  <Eye className="h-3.5 w-3.5" /> Ver
+                </span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.map((l) => (
               <TableRow key={l.numero} className="hover:bg-muted/30">
-                <TableCell className="font-mono font-bold text-foreground">{l.numero}</TableCell>
-                <TableCell className="text-muted-foreground">{l.data}</TableCell>
-                <TableCell className="max-w-[300px] truncate text-foreground">{l.veiculo}</TableCell>
-                <TableCell className="font-mono uppercase text-foreground">{l.placa}</TableCell>
-                <TableCell className="text-right font-mono text-muted-foreground">
-                  {l.km.toLocaleString("pt-BR")}
+                <TableCell className="py-3">
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg font-bold text-blue-600">{l.numero}</span>
+                    <span className="text-xs text-muted-foreground">{l.data}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="max-w-[280px]">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate text-foreground text-sm">{l.veiculo}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="font-mono uppercase text-foreground text-sm">{l.placa}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center gap-2 justify-end">
+                    <Gauge className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="font-mono text-sm text-muted-foreground">
+                      {l.km.toLocaleString("pt-BR")}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground truncate max-w-[200px]">{l.tipo}</span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge
@@ -88,11 +134,22 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
                     {l.resultado}
                   </Badge>
                 </TableCell>
+                <TableCell className="text-center">
+                  <a
+                    href={SYSCON_BASE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Ver
+                  </a>
+                </TableCell>
               </TableRow>
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Nenhum laudo encontrado
                 </TableCell>
               </TableRow>
