@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      laudos: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          km: number
+          numero: number
+          placa: string
+          resultado: string
+          tipo: string
+          updated_at: string
+          url: string | null
+          veiculo: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+          km?: number
+          numero: number
+          placa: string
+          resultado: string
+          tipo?: string
+          updated_at?: string
+          url?: string | null
+          veiculo: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          km?: number
+          numero?: number
+          placa?: string
+          resultado?: string
+          tipo?: string
+          updated_at?: string
+          url?: string | null
+          veiculo?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
