@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Laudo } from "@/lib/laudos-data";
 import { Search, Truck } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface LaudosTableProps {
   laudos: Laudo[];
@@ -27,12 +26,7 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
   }, [laudos, search, filtroResultado]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
-      className="rounded-xl border bg-card shadow-lg"
-    >
+    <div className="rounded-xl border bg-card shadow-lg">
       <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Truck className="h-5 w-5 text-muted-foreground" />
@@ -109,6 +103,6 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
       <div className="border-t px-6 py-3 text-sm text-muted-foreground">
         {filtered.length} de {laudos.length} laudos
       </div>
-    </motion.div>
+    </div>
   );
 }
