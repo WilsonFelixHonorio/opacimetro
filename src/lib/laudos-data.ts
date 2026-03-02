@@ -6,12 +6,13 @@ export interface Laudo {
   km: number;
   tipo: string;
   resultado: "APROVADO" | "REPROVADO";
+  url?: string;
 }
 
 export const SYSCON_BASE_URL = "https://customer.sysconweb.com.br/bb94545f-9d9f-4bb5-bd72-284e4bc5faff";
 
 export const laudosData: Laudo[] = [
-  { numero: 131, data: "04/02/2026", veiculo: "SCANIA / G 360 A 4X2 XT CS DC09 144", placa: "SUP5F35", km: 34236, tipo: "Relatório simplificado de Fumaça", resultado: "APROVADO" },
+  { numero: 131, data: "04/02/2026", veiculo: "SCANIA / G 360 A 4X2 XT CS DC09 144", placa: "SUP5F35", km: 34236, tipo: "Relatório simplificado de Fumaça", resultado: "APROVADO", url: "https://customer.sysconweb.com.br/bb94545f-9d9f-4bb5-bd72-284e4bc5faff/test-details/6F9A067B-20B9-4412-891B-338177616755" },
   { numero: 130, data: "12/12/2025", veiculo: "MERCEDES-BENZ / AXOR 3344 K OM 457 LA.III/24", placa: "GJN2G43", km: 2446153, tipo: "Relatório simplificado de Fumaça", resultado: "APROVADO" },
   { numero: 129, data: "12/12/2025", veiculo: "MERCEDES-BENZ / ATEGO 2730 6X4/ OM 926 LA.V/24", placa: "FCN8G78", km: 3925975, tipo: "Relatório simplificado de Fumaça", resultado: "APROVADO" },
   { numero: 128, data: "12/12/2025", veiculo: "MERCEDES-BENZ / 2726 6x4 OM 906 LA.III/25", placa: "EDL2449", km: 2257046, tipo: "Relatório simplificado de Fumaça", resultado: "APROVADO" },

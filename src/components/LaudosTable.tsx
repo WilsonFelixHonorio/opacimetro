@@ -136,7 +136,7 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
                 </TableCell>
                 <TableCell className="text-center">
                   <a
-                    href={SYSCON_BASE_URL}
+                    href={l.url || SYSCON_BASE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
