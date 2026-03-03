@@ -173,3 +173,17 @@ export function getAnosDisponiveis(laudos: Laudo[]): number[] {
   });
   return Array.from(anos).sort((a, b) => b - a);
 }
+
+export function getLaudosPorAno(laudos: Laudo[]) {
+  const anos: Record<string, { aprovados: number; reprovados: number }> = {};
+  laudos.forEach((l) => {
+    const date = parseDate(l.data);
+    const key = date.getFullYear().toString();
+    if (!anos[key]) anos[key] = { aprovados: 0, reprovados: 0 };
+    if (l.resultado === "APROVADO") anos[key].aprovados++;
+    else anos[key].reprovados++;
+  });
+  return Object.entries(anos)
+    .map(([ano, dados]) => ({ ano, ...dados }))
+    .sort((a, b) => parseInt(a.ano) - parseInt(b.ano));
+}

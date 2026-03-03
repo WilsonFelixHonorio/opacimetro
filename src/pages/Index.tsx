@@ -9,22 +9,38 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 
 const Index = () => {
   const { data: allLaudos = [], isLoading, refetch } = useLaudos();
   const [syncing, setSyncing] = useState(false);
   const [anoFiltro, setAnoFiltro] = useState<string>("todos");
+  const [mesFiltro, setMesFiltro] = useState<string | null>(null);
 
   const anos = useMemo(() => getAnosDisponiveis(allLaudos), [allLaudos]);
 
-  const laudosData = useMemo(() => {
+  const laudosPorAno = useMemo(() => {
     if (anoFiltro === "todos") return allLaudos;
     const ano = parseInt(anoFiltro);
     return allLaudos.filter((l) => parseDate(l.data).getFullYear() === ano);
   }, [allLaudos, anoFiltro]);
 
+  // Filtro adicional por mês (do clique no gráfico)
+  const laudosData = useMemo(() => {
+    if (!mesFiltro) return laudosPorAno;
+    const nomesMeses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    return laudosPorAno.filter((l) => {
+      const date = parseDate(l.data);
+      const key = `${nomesMeses[date.getMonth()]}/${date.getFullYear()}`;
+      return key === mesFiltro;
+    });
+  }, [laudosPorAno, mesFiltro]);
+
   const stats = getStats(laudosData);
+
+  const handleMesClick = useCallback((mes: string | null) => {
+    setMesFiltro(mes);
+  }, []);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -63,7 +79,7 @@ const Index = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Select value={anoFiltro} onValueChange={setAnoFiltro}>
+              <Select value={anoFiltro} onValueChange={(v) => { setAnoFiltro(v); setMesFiltro(null); }}>
                 <SelectTrigger className="w-[130px]">
                   <SelectValue placeholder="Ano" />
                 </SelectTrigger>
@@ -76,12 +92,7 @@ const Index = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSync}
-                disabled={syncing}
-              >
+              <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
                 {syncing ? "Sincronizando..." : "Sincronizar"}
               </Button>
@@ -95,7 +106,6 @@ const Index = () => {
 
       {/* Content */}
       <main className="space-y-6 px-6 py-6">
-        {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Total de Laudos" value={stats.total} icon={ClipboardCheck} color="bg-primary" />
           <StatCard title="Aprovados" value={stats.aprovados} icon={CheckCircle} description={`${stats.taxaAprovacao}% de aprovação`} color="bg-emerald-600" />
@@ -103,10 +113,8 @@ const Index = () => {
           <StatCard title="Taxa de Aprovação" value={`${stats.taxaAprovacao}%`} icon={TrendingUp} color="bg-primary" />
         </div>
 
-        {/* Charts */}
-        <LaudosChart laudos={laudosData} />
+        <LaudosChart laudos={laudosPorAno} mesSelecionado={mesFiltro} onMesClick={handleMesClick} />
 
-        {/* Table */}
         <LaudosTable laudos={laudosData} />
       </main>
     </div>
