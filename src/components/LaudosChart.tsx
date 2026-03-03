@@ -1,25 +1,31 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Laudo, getLaudosPorMes, getVeiculosPorMarca } from "@/lib/laudos-data";
+import { Laudo, getLaudosPorMes, getVeiculosPorMarca, getVeiculosPorModelo } from "@/lib/laudos-data";
 
 interface LaudosChartProps {
   laudos: Laudo[];
 }
 
-const COLORS = ["hsl(222, 47%, 11%)", "hsl(210, 40%, 50%)", "hsl(215, 16%, 47%)", "hsl(200, 30%, 60%)"];
+const COLORS = [
+  "hsl(222, 47%, 11%)", "hsl(210, 40%, 50%)", "hsl(215, 16%, 47%)", "hsl(200, 30%, 60%)",
+  "hsl(180, 35%, 45%)", "hsl(240, 30%, 55%)", "hsl(260, 25%, 50%)", "hsl(190, 40%, 40%)",
+  "hsl(170, 30%, 50%)", "hsl(230, 35%, 60%)",
+];
 
 export function LaudosChart({ laudos }: LaudosChartProps) {
   const dadosMes = getLaudosPorMes(laudos);
   const dadosMarca = getVeiculosPorMarca(laudos);
+  const dadosModelo = getVeiculosPorModelo(laudos).slice(0, 15);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="space-y-6">
+      {/* Laudos por mês - full width */}
       <Card className="border-none shadow-lg">
         <CardHeader>
           <CardTitle className="text-base">Laudos por Mês</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dadosMes}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis dataKey="mes" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
@@ -38,32 +44,64 @@ export function LaudosChart({ laudos }: LaudosChartProps) {
         </CardContent>
       </Card>
 
-      <Card className="border-none shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Distribuição por Marca</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={dadosMarca}
-                dataKey="total"
-                nameKey="marca"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={({ marca, total }: { marca: string; total: number }) => `${marca} (${total})`}
-                labelLine={{ stroke: "hsl(215, 16%, 47%)" }}
-              >
-                {dadosMarca.map((_, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Marca + Modelo side by side */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-none shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-base">Distribuição por Marca</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={dadosMarca}
+                  dataKey="total"
+                  nameKey="marca"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={({ marca, total }: { marca: string; total: number }) => `${marca} (${total})`}
+                  labelLine={{ stroke: "hsl(215, 16%, 47%)" }}
+                >
+                  {dadosMarca.map((_, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-base">Distribuição por Modelo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dadosModelo} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis type="number" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
+                <YAxis
+                  type="category"
+                  dataKey="modelo"
+                  className="text-xs"
+                  tick={{ fill: "hsl(215, 16%, 47%)" }}
+                  width={130}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(0, 0%, 100%)",
+                    border: "1px solid hsl(214, 32%, 91%)",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Bar dataKey="total" name="Laudos" fill="hsl(210, 40%, 50%)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
