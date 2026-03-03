@@ -120,8 +120,14 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominac
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={({ marca, total }: { marca: string; total: number }) => `${marca} (${total})`}
+                  label={({ marca, total, x, y, textAnchor }: any) => (
+                    <text x={x} y={y} textAnchor={textAnchor} fill="hsl(215, 16%, 47%)" fontSize={12}>
+                      {`${marca} (${total})`}
+                    </text>
+                  )}
                   labelLine={{ stroke: "hsl(215, 16%, 47%)" }}
+                  stroke="none"
+                  activeShape={() => null}
                 >
                   {dadosMarca.map((_, index) => (
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
