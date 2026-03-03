@@ -56,7 +56,7 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartP
                 <XAxis dataKey="mes" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
                 <YAxis className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
                 <Tooltip
-                  cursor={false}
+                  cursor={{ fill: "hsl(210, 40%, 90%, 0.3)" }}
                   contentStyle={{
                     backgroundColor: "hsl(0, 0%, 100%)",
                     border: "1px solid hsl(214, 32%, 91%)",
@@ -81,7 +81,7 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartP
                 <XAxis dataKey="ano" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
                 <YAxis className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
                 <Tooltip
-                  cursor={false}
+                  cursor={{ fill: "hsl(210, 40%, 90%, 0.3)" }}
                   contentStyle={{
                     backgroundColor: "hsl(0, 0%, 100%)",
                     border: "1px solid hsl(214, 32%, 91%)",
@@ -119,7 +119,7 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartP
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip cursor={false} />
+                <Tooltip cursor={{ fill: "hsl(210, 40%, 90%, 0.3)" }} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -142,7 +142,7 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartP
                   width={130}
                 />
                 <Tooltip
-                  cursor={false}
+                  cursor={{ fill: "hsl(210, 40%, 90%, 0.3)" }}
                   contentStyle={{
                     backgroundColor: "hsl(0, 0%, 100%)",
                     border: "1px solid hsl(214, 32%, 91%)",
