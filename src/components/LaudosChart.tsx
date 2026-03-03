@@ -56,15 +56,15 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartP
                 <XAxis dataKey="mes" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
                 <YAxis className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
                 <Tooltip
-                  cursor={{ fill: "hsl(210, 40%, 90%, 0.3)" }}
+                  cursor={false}
                   contentStyle={{
                     backgroundColor: "hsl(0, 0%, 100%)",
                     border: "1px solid hsl(214, 32%, 91%)",
                     borderRadius: "8px",
                   }}
                 />
-                <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} activeBar={{ fill: "hsl(152, 60%, 50%)" }} />
+                <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} activeBar={{ fill: "hsl(0, 84%, 72%)" }} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -81,15 +81,15 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartP
                 <XAxis dataKey="ano" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
                 <YAxis className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
                 <Tooltip
-                  cursor={{ fill: "hsl(210, 40%, 90%, 0.3)" }}
+                  cursor={false}
                   contentStyle={{
                     backgroundColor: "hsl(0, 0%, 100%)",
                     border: "1px solid hsl(214, 32%, 91%)",
                     borderRadius: "8px",
                   }}
                 />
-                <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} activeBar={{ fill: "hsl(152, 60%, 50%)" }} />
+                <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} activeBar={{ fill: "hsl(0, 84%, 72%)" }} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -119,7 +119,7 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartP
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip cursor={{ fill: "hsl(210, 40%, 90%, 0.3)" }} />
+                <Tooltip cursor={false} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -142,14 +142,14 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartP
                   width={130}
                 />
                 <Tooltip
-                  cursor={{ fill: "hsl(210, 40%, 90%, 0.3)" }}
+                  cursor={false}
                   contentStyle={{
                     backgroundColor: "hsl(0, 0%, 100%)",
                     border: "1px solid hsl(214, 32%, 91%)",
                     borderRadius: "8px",
                   }}
                 />
-                <Bar dataKey="total" name="Laudos" fill="hsl(210, 40%, 50%)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="total" name="Laudos" fill="hsl(210, 40%, 50%)" radius={[0, 4, 4, 0]} activeBar={{ fill: "hsl(210, 40%, 65%)" }} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
