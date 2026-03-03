@@ -3,6 +3,7 @@ import { useLaudos } from "@/hooks/use-laudos";
 import { StatCard } from "@/components/StatCard";
 import { LaudosTable } from "@/components/LaudosTable";
 import { LaudosChart } from "@/components/LaudosChart";
+import { AppTabs } from "@/components/AppTabs";
 import { ClipboardCheck, CheckCircle, XCircle, TrendingUp, RefreshCw, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,6 +104,8 @@ const Index = () => {
           </div>
         </div>
       </header>
+
+      <AppTabs />
 
       {/* Content */}
       <main className="space-y-6 px-6 py-6">
