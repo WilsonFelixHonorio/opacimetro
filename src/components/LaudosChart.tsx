@@ -20,7 +20,8 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominac
   const dadosMes = getLaudosPorMes(laudos);
   const dadosAno = getLaudosPorAno(laudos);
   const dadosMarca = getVeiculosPorMarca(laudos);
-  const dadosModelo = getVeiculosPorModelo(laudos, placaDenominacao).slice(0, 15);
+  const dadosModelo = getVeiculosPorModelo(laudos, placaDenominacao);
+  const modeloChartHeight = Math.max(300, dadosModelo.length * 32);
 
   const handleBarClick = (data: any) => {
     if (data?.activeLabel) {
@@ -128,31 +129,34 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominac
 
         <Card className="border-none shadow-lg">
           <CardHeader>
-            <CardTitle className="text-base">Distribuição por Modelo</CardTitle>
+            <CardTitle className="text-base">Distribuição por Modelo ({dadosModelo.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dadosModelo} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis type="number" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
-                <YAxis
-                  type="category"
-                  dataKey="modelo"
-                  className="text-xs"
-                  tick={{ fill: "hsl(215, 16%, 47%)" }}
-                  width={130}
-                />
-                <Tooltip
-                  cursor={false}
-                  contentStyle={{
-                    backgroundColor: "hsl(0, 0%, 100%)",
-                    border: "1px solid hsl(214, 32%, 91%)",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Bar dataKey="total" name="Laudos" fill="hsl(210, 40%, 50%)" radius={[0, 4, 4, 0]} activeBar={{ fill: "hsl(210, 40%, 65%)" }} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ width: "100%", overflowY: "auto", maxHeight: 400 }}>
+              <ResponsiveContainer width="100%" height={modeloChartHeight}>
+                <BarChart data={dadosModelo} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis type="number" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
+                  <YAxis
+                    type="category"
+                    dataKey="modelo"
+                    className="text-xs"
+                    tick={{ fill: "hsl(215, 16%, 47%)", fontSize: 11 }}
+                    width={160}
+                    interval={0}
+                  />
+                  <Tooltip
+                    cursor={false}
+                    contentStyle={{
+                      backgroundColor: "hsl(0, 0%, 100%)",
+                      border: "1px solid hsl(214, 32%, 91%)",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Bar dataKey="total" name="Laudos" fill="hsl(210, 40%, 50%)" radius={[0, 4, 4, 0]} activeBar={{ fill: "hsl(210, 40%, 65%)" }} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
