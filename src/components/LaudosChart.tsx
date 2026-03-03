@@ -60,10 +60,13 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominac
                 <Tooltip
                   cursor={false}
                   contentStyle={{
-                    backgroundColor: "hsl(0, 0%, 100%)",
-                    border: "1px solid hsl(214, 32%, 91%)",
+                    backgroundColor: "hsl(222, 47%, 11%)",
+                    border: "1px solid hsl(215, 16%, 47%)",
                     borderRadius: "8px",
+                    color: "hsl(210, 40%, 98%)",
                   }}
+                  labelStyle={{ color: "hsl(210, 40%, 98%)" }}
+                  itemStyle={{ color: "hsl(210, 40%, 98%)" }}
                 />
                 <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} activeBar={{ fill: "hsl(152, 60%, 50%)" }} />
                 <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} activeBar={{ fill: "hsl(0, 84%, 72%)" }} />
@@ -85,10 +88,13 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominac
                 <Tooltip
                   cursor={false}
                   contentStyle={{
-                    backgroundColor: "hsl(0, 0%, 100%)",
-                    border: "1px solid hsl(214, 32%, 91%)",
+                    backgroundColor: "hsl(222, 47%, 11%)",
+                    border: "1px solid hsl(215, 16%, 47%)",
                     borderRadius: "8px",
+                    color: "hsl(210, 40%, 98%)",
                   }}
+                  labelStyle={{ color: "hsl(210, 40%, 98%)" }}
+                  itemStyle={{ color: "hsl(210, 40%, 98%)" }}
                 />
                 <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} activeBar={{ fill: "hsl(152, 60%, 50%)" }} />
                 <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} activeBar={{ fill: "hsl(0, 84%, 72%)" }} />
@@ -121,7 +127,17 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominac
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip cursor={false} />
+                <Tooltip
+                  cursor={false}
+                  contentStyle={{
+                    backgroundColor: "hsl(222, 47%, 11%)",
+                    border: "1px solid hsl(215, 16%, 47%)",
+                    borderRadius: "8px",
+                    color: "hsl(210, 40%, 98%)",
+                  }}
+                  labelStyle={{ color: "hsl(210, 40%, 98%)" }}
+                  itemStyle={{ color: "hsl(210, 40%, 98%)" }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
