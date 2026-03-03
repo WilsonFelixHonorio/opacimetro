@@ -19,7 +19,7 @@ const COLORS = [
 export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominacao }: LaudosChartProps) {
   const dadosMes = getLaudosPorMes(laudos);
   const dadosAno = getLaudosPorAno(laudos);
-  const dadosMarca = getVeiculosPorMarca(laudos);
+  const dadosMarca = getVeiculosPorMarca(laudos, placaDenominacao);
   const dadosModelo = getVeiculosPorModelo(laudos, placaDenominacao);
   const modeloChartHeight = Math.max(300, dadosModelo.length * 32);
 

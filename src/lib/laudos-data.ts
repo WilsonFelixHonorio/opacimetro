@@ -142,10 +142,32 @@ export function getLaudosPorMes(laudos: Laudo[]) {
     .reverse();
 }
 
-export function getVeiculosPorMarca(laudos: Laudo[]) {
+const MARCA_ALIASES: Record<string, string> = {
+  "MB": "Mercedes-Benz",
+  "MERCEDES BENZ": "Mercedes-Benz",
+  "MERCEDES-BENZ": "Mercedes-Benz",
+  "MERCEDES": "Mercedes-Benz",
+  "M.BENZ": "Mercedes-Benz",
+  "M. BENZ": "Mercedes-Benz",
+  "MBENZ": "Mercedes-Benz",
+};
+
+function normalizeMarca(raw: string): string {
+  const upper = raw.trim().toUpperCase();
+  return MARCA_ALIASES[upper] || raw.trim();
+}
+
+export function getVeiculosPorMarca(laudos: Laudo[], placaDenominacao?: Record<string, string>) {
   const marcas: Record<string, number> = {};
   laudos.forEach((l) => {
-    const marca = l.veiculo.split("/")[0].trim();
+    let marcaRaw: string;
+    if (placaDenominacao && placaDenominacao[l.placa.toUpperCase()]) {
+      // Pegar primeira palavra da denominação como marca
+      marcaRaw = placaDenominacao[l.placa.toUpperCase()].split(/[\s/]/)[0];
+    } else {
+      marcaRaw = l.veiculo.split("/")[0];
+    }
+    const marca = normalizeMarca(marcaRaw);
     marcas[marca] = (marcas[marca] || 0) + 1;
   });
   return Object.entries(marcas).map(([marca, total]) => ({ marca, total }));
