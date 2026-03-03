@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Sector } from "recharts";
 import { Laudo, getLaudosPorMes, getLaudosPorAno, getVeiculosPorMarca, getVeiculosPorModelo } from "@/lib/laudos-data";
 import type { ChartFilters } from "@/pages/Index";
 
@@ -118,7 +118,21 @@ export function LaudosChart({ laudos, laudosFiltrados, filters, onFilterToggle, 
                   )}
                   labelLine={{ stroke: "hsl(215, 16%, 47%)" }}
                   stroke="none"
-                  activeShape={() => null}
+                  activeShape={(props: any) => {
+                    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+                    return (
+                      <Sector
+                        cx={cx}
+                        cy={cy}
+                        innerRadius={innerRadius}
+                        outerRadius={outerRadius + 4}
+                        startAngle={startAngle}
+                        endAngle={endAngle}
+                        fill={fill}
+                        opacity={0.75}
+                      />
+                    );
+                  }}
                   onClick={(data: any) => data?.marca && onFilterToggle("marca", data.marca)}
                   style={{ cursor: "pointer" }}
                 >
