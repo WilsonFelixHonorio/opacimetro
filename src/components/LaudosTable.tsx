@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Laudo, SYSCON_BASE_URL } from "@/lib/laudos-data";
-import { Search, Truck, Tag, Gauge, FileText, Eye } from "lucide-react";
+import { Search, Truck, Tag, Gauge, FileText, ExternalLink } from "lucide-react";
 
 interface LaudosTableProps {
   laudos: Laudo[];
@@ -80,19 +80,21 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
                 </span>
               </TableHead>
               <TableHead className="font-semibold text-center">Resultado</TableHead>
-              <TableHead className="font-semibold text-center w-[80px]">
-                <span className="flex items-center gap-1.5 justify-center">
-                  <Eye className="h-3.5 w-3.5" /> Ver
-                </span>
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.map((l) => (
-              <TableRow key={l.numero} className="hover:bg-muted/30">
+              <TableRow
+                key={l.numero}
+                className="hover:bg-muted/30 cursor-pointer group"
+                onClick={() => {
+                  const sysconUrl = l.url || `${SYSCON_BASE_URL}`;
+                  window.open(sysconUrl, "_blank", "noopener,noreferrer");
+                }}
+              >
                 <TableCell className="py-3">
                   <div className="flex flex-col items-center">
-                    <span className="text-lg font-bold text-blue-600">{l.numero}</span>
+                    <span className="text-lg font-bold text-primary">{l.numero}</span>
                     <span className="text-xs text-muted-foreground">{l.data}</span>
                   </div>
                 </TableCell>
@@ -123,33 +125,25 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
-                  <Badge
-                    variant={l.resultado === "APROVADO" ? "default" : "destructive"}
-                    className={
-                      l.resultado === "APROVADO"
-                        ? "bg-emerald-600 hover:bg-emerald-700"
-                        : ""
-                    }
-                  >
-                    {l.resultado}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-center">
-                  <a
-                    href={l.url || SYSCON_BASE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
-                  >
-                    <Eye className="h-4 w-4" />
-                    Ver
-                  </a>
+                  <div className="flex items-center justify-center gap-2">
+                    <Badge
+                      variant={l.resultado === "APROVADO" ? "default" : "destructive"}
+                      className={
+                        l.resultado === "APROVADO"
+                          ? "bg-emerald-600 hover:bg-emerald-700"
+                          : ""
+                      }
+                    >
+                      {l.resultado}
+                    </Badge>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Nenhum laudo encontrado
                 </TableCell>
               </TableRow>
