@@ -150,3 +150,26 @@ export function getVeiculosPorMarca(laudos: Laudo[]) {
   });
   return Object.entries(marcas).map(([marca, total]) => ({ marca, total }));
 }
+
+export function getVeiculosPorModelo(laudos: Laudo[]) {
+  const modelos: Record<string, number> = {};
+  laudos.forEach((l) => {
+    const parts = l.veiculo.split("/");
+    const modelo = parts.length > 1 ? parts.slice(1).join("/").trim() : l.veiculo;
+    // Pegar só o nome principal do modelo (antes de detalhes como OM, DSC, etc)
+    const modeloSimples = modelo.split(" ").slice(0, 2).join(" ");
+    modelos[modeloSimples] = (modelos[modeloSimples] || 0) + 1;
+  });
+  return Object.entries(modelos)
+    .map(([modelo, total]) => ({ modelo, total }))
+    .sort((a, b) => b.total - a.total);
+}
+
+export function getAnosDisponiveis(laudos: Laudo[]): number[] {
+  const anos = new Set<number>();
+  laudos.forEach((l) => {
+    const date = parseDate(l.data);
+    anos.add(date.getFullYear());
+  });
+  return Array.from(anos).sort((a, b) => b - a);
+}

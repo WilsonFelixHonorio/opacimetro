@@ -1,4 +1,4 @@
-import { getStats } from "@/lib/laudos-data";
+import { getStats, getAnosDisponiveis, parseDate } from "@/lib/laudos-data";
 import { useLaudos } from "@/hooks/use-laudos";
 import { StatCard } from "@/components/StatCard";
 import { LaudosTable } from "@/components/LaudosTable";
@@ -6,13 +6,24 @@ import { LaudosChart } from "@/components/LaudosChart";
 import { ClipboardCheck, CheckCircle, XCircle, TrendingUp, RefreshCw, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 const Index = () => {
-  const { data: laudosData = [], isLoading, refetch } = useLaudos();
+  const { data: allLaudos = [], isLoading, refetch } = useLaudos();
   const [syncing, setSyncing] = useState(false);
+  const [anoFiltro, setAnoFiltro] = useState<string>("todos");
+
+  const anos = useMemo(() => getAnosDisponiveis(allLaudos), [allLaudos]);
+
+  const laudosData = useMemo(() => {
+    if (anoFiltro === "todos") return allLaudos;
+    const ano = parseInt(anoFiltro);
+    return allLaudos.filter((l) => parseDate(l.data).getFullYear() === ano);
+  }, [allLaudos, anoFiltro]);
+
   const stats = getStats(laudosData);
 
   const handleSync = async () => {
@@ -41,7 +52,7 @@ const Index = () => {
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
       <header className="border-b bg-card shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
+        <div className="px-6 py-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -51,7 +62,20 @@ const Index = () => {
                 Usina Açucareira Guaíra — CNPJ: 07.948.124.0001/42
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <Select value={anoFiltro} onValueChange={setAnoFiltro}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os anos</SelectItem>
+                  {anos.map((ano) => (
+                    <SelectItem key={ano} value={ano.toString()}>
+                      {ano}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button
                 variant="outline"
                 size="sm"
@@ -70,7 +94,7 @@ const Index = () => {
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+      <main className="space-y-6 px-6 py-6">
         {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Total de Laudos" value={stats.total} icon={ClipboardCheck} color="bg-primary" />
