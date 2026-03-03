@@ -3,20 +3,21 @@ import { useLaudos } from "@/hooks/use-laudos";
 import { StatCard } from "@/components/StatCard";
 import { LaudosTable } from "@/components/LaudosTable";
 import { LaudosChart } from "@/components/LaudosChart";
-import { AppTabs } from "@/components/AppTabs";
-import { ClipboardCheck, CheckCircle, XCircle, TrendingUp, RefreshCw, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { AppHeader } from "@/components/AppHeader";
+import { ClipboardCheck, CheckCircle, XCircle, TrendingUp, RefreshCw, Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 
 const Index = () => {
   const { data: allLaudos = [], isLoading, refetch } = useLaudos();
   const [syncing, setSyncing] = useState(false);
   const [anoFiltro, setAnoFiltro] = useState<string>("todos");
   const [mesFiltro, setMesFiltro] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<string | null>(
+    () => localStorage.getItem("lastSyncTime")
+  );
 
   const anos = useMemo(() => getAnosDisponiveis(allLaudos), [allLaudos]);
 
@@ -26,7 +27,6 @@ const Index = () => {
     return allLaudos.filter((l) => parseDate(l.data).getFullYear() === ano);
   }, [allLaudos, anoFiltro]);
 
-  // Filtro adicional por mês (do clique no gráfico)
   const laudosData = useMemo(() => {
     if (!mesFiltro) return laudosPorAno;
     const nomesMeses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -48,6 +48,9 @@ const Index = () => {
     try {
       const { data, error } = await supabase.functions.invoke("sync-laudos-urls");
       if (error) throw error;
+      const now = new Date().toLocaleString("pt-BR");
+      localStorage.setItem("lastSyncTime", now);
+      setLastSync(now);
       toast.success(`Sincronizado! ${data.inserted} novos, ${data.updated} atualizados.`);
       refetch();
     } catch (e: any) {
@@ -67,31 +70,19 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <header className="border-b bg-card shadow-sm">
-        <div className="px-6 py-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Painel de Laudos de Opacidade
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Usina Açucareira Guaíra — CNPJ: 07.948.124.0001/42
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
-                <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Sincronizando..." : "Sincronizar"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader>
+        <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
+          <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
+          {syncing ? "Sincronizando..." : "Sincronizar"}
+        </Button>
+        {lastSync && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {lastSync}
+          </span>
+        )}
+      </AppHeader>
 
-      <AppTabs />
-
-      {/* Content */}
       <main className="space-y-6 px-6 py-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Total de Laudos" value={stats.total} icon={ClipboardCheck} color="bg-primary" />
