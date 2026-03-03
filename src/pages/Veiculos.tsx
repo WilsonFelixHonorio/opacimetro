@@ -1,5 +1,8 @@
+import React from "react";
 import { useVeiculos, Veiculo } from "@/hooks/use-veiculos";
-import { Loader2, Truck, Search, Plus, Trash2 } from "lucide-react";
+import { useLaudos } from "@/hooks/use-laudos";
+import { parseDate } from "@/lib/laudos-data";
+import { Loader2, Truck, Search, Plus, Trash2, ChevronDown, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,6 +15,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
+import { SYSCON_BASE_URL } from "@/lib/laudos-data";
 
 const camposVeiculo = [
   { key: "equip", label: "Equip." },
@@ -33,12 +37,29 @@ const emptyForm = {
 
 const Veiculos = () => {
   const { data: veiculos = [], isLoading, refetch } = useVeiculos();
+  const { data: laudos = [], isLoading: loadingLaudos } = useLaudos();
   const [busca, setBusca] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [expandedPlaca, setExpandedPlaca] = useState<string | null>(null);
+
+  // Laudos grouped by placa, sorted newest first
+  const laudosPorPlaca = useMemo(() => {
+    const map: Record<string, typeof laudos> = {};
+    laudos.forEach((l) => {
+      const placa = l.placa.toUpperCase();
+      if (!map[placa]) map[placa] = [];
+      map[placa].push(l);
+    });
+    // Sort each group newest first
+    Object.values(map).forEach((arr) =>
+      arr.sort((a, b) => parseDate(b.data).getTime() - parseDate(a.data).getTime())
+    );
+    return map;
+  }, [laudos]);
 
   const filtrados = useMemo(() => {
     if (!busca) return veiculos;
@@ -95,7 +116,7 @@ const Veiculos = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || loadingLaudos) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -150,30 +171,106 @@ const Veiculos = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtrados.map((v) => (
-                    <TableRow key={v.id} className="hover:bg-muted/50 group">
-                      <TableCell className="font-bold text-sm" style={{ color: "hsl(217, 91%, 60%)" }}>{v.equip}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{v.denominacao}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{v.denominacao_tipo}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{v.classe_operacional}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{v.ger_responsavel}</TableCell>
-                      <TableCell className="text-sm text-center">{v.ano}</TableCell>
-                      <TableCell className="text-sm">{v.cor}</TableCell>
-                      <TableCell className="text-sm font-medium">{v.placa}</TableCell>
-                      <TableCell className="text-sm font-mono text-xs">{v.serie_chassis}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{v.proprietario}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                          onClick={() => setDeleteId(v.id)}
+                  {filtrados.map((v) => {
+                    const placa = v.placa.toUpperCase();
+                    const isExpanded = expandedPlaca === placa;
+                    const veiculoLaudos = laudosPorPlaca[placa] || [];
+
+                    return (
+                      <React.Fragment key={v.id}>
+                        <TableRow
+                          className="hover:bg-muted/50 group cursor-pointer"
+                          onClick={() => setExpandedPlaca(isExpanded ? null : placa)}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          <TableCell className="font-bold text-sm" style={{ color: "hsl(217, 91%, 60%)" }}>
+                            <span className="flex items-center gap-1">
+                              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`} />
+                              {v.equip}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">{v.denominacao}</TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">{v.denominacao_tipo}</TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">{v.classe_operacional}</TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">{v.ger_responsavel}</TableCell>
+                          <TableCell className="text-sm text-center">{v.ano}</TableCell>
+                          <TableCell className="text-sm">{v.cor}</TableCell>
+                          <TableCell className="text-sm font-medium">{v.placa}</TableCell>
+                          <TableCell className="text-sm font-mono text-xs">{v.serie_chassis}</TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">{v.proprietario}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                              onClick={(e) => { e.stopPropagation(); setDeleteId(v.id); }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow>
+                            <TableCell colSpan={11} className="p-0 bg-muted/20">
+                              {veiculoLaudos.length === 0 ? (
+                                <div className="px-8 py-4 text-sm text-muted-foreground italic">
+                                  Nenhum laudo encontrado para este veículo.
+                                </div>
+                              ) : (
+                                <div className="px-8 py-3">
+                                  <p className="text-xs font-semibold text-muted-foreground mb-2">
+                                    Laudos ({veiculoLaudos.length})
+                                  </p>
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow className="bg-muted/40">
+                                        <TableHead className="text-xs font-semibold">Nº</TableHead>
+                                        <TableHead className="text-xs font-semibold">Data</TableHead>
+                                        <TableHead className="text-xs font-semibold">KM</TableHead>
+                                        <TableHead className="text-xs font-semibold">Resultado</TableHead>
+                                        <TableHead className="text-xs font-semibold">Link</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {veiculoLaudos.map((l) => (
+                                        <TableRow key={l.numero} className="hover:bg-muted/30">
+                                          <TableCell className="text-sm font-mono">{l.numero}</TableCell>
+                                          <TableCell className="text-sm">{l.data}</TableCell>
+                                          <TableCell className="text-sm">{l.km.toLocaleString("pt-BR")}</TableCell>
+                                          <TableCell>
+                                            <Badge
+                                              variant={l.resultado === "APROVADO" ? "default" : "destructive"}
+                                              className={l.resultado === "APROVADO" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                                            >
+                                              {l.resultado}
+                                            </Badge>
+                                          </TableCell>
+                                          <TableCell>
+                                            {l.url ? (
+                                              <a
+                                                href={l.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-primary hover:underline inline-flex items-center gap-1 text-xs"
+                                                onClick={(e) => e.stopPropagation()}
+                                              >
+                                                <ExternalLink className="h-3 w-3" /> Ver
+                                              </a>
+                                            ) : (
+                                              <span className="text-muted-foreground text-xs">-</span>
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
