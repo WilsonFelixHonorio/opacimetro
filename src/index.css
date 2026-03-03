@@ -101,17 +101,80 @@
 }
 
 @media print {
+  @page {
+    size: landscape;
+    margin: 12mm;
+  }
+
   body {
     background: white !important;
     color: black !important;
+    font-size: 11px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  nav, button, input {
+
+  nav, button, input, header, .print\:hidden {
     display: none !important;
   }
+
   * {
     color: black !important;
-    border-color: #ccc !important;
+    border-color: #ddd !important;
     box-shadow: none !important;
-    background: white !important;
+    background: transparent !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .rounded-xl {
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  h2 {
+    font-size: 14px !important;
+    margin-bottom: 8px !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 10px !important;
+  }
+
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 4px 6px !important;
+  }
+
+  th {
+    background: #f0f0f0 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Summary cards in a row */
+  .grid {
+    display: flex !important;
+    gap: 16px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .grid > div {
+    border: 1px solid #ccc !important;
+    padding: 6px 10px !important;
+    flex: 1 !important;
+  }
+
+  /* Badges readable */
+  [data-slot="badge"], span[class*="badge"], .bg-amber-500\/15, .bg-blue-500\/15, .bg-emerald-600 {
+    background: transparent !important;
+    border: 1px solid #999 !important;
+    padding: 1px 4px !important;
+    font-size: 9px !important;
   }
 }
