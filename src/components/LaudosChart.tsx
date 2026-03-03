@@ -7,6 +7,7 @@ interface LaudosChartProps {
   laudos: Laudo[];
   mesSelecionado?: string | null;
   onMesClick?: (mes: string | null) => void;
+  placaDenominacao?: Record<string, string>;
 }
 
 const COLORS = [
@@ -15,11 +16,11 @@ const COLORS = [
   "hsl(170, 30%, 50%)", "hsl(230, 35%, 60%)",
 ];
 
-export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartProps) {
+export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominacao }: LaudosChartProps) {
   const dadosMes = getLaudosPorMes(laudos);
   const dadosAno = getLaudosPorAno(laudos);
   const dadosMarca = getVeiculosPorMarca(laudos);
-  const dadosModelo = getVeiculosPorModelo(laudos).slice(0, 15);
+  const dadosModelo = getVeiculosPorModelo(laudos, placaDenominacao).slice(0, 15);
 
   const handleBarClick = (data: any) => {
     if (data?.activeLabel) {
