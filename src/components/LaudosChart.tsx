@@ -12,9 +12,16 @@ interface LaudosChartProps {
 }
 
 const COLORS = [
-  "hsl(222, 47%, 11%)", "hsl(210, 40%, 50%)", "hsl(215, 16%, 47%)", "hsl(200, 30%, 60%)",
-  "hsl(180, 35%, 45%)", "hsl(240, 30%, 55%)", "hsl(260, 25%, 50%)", "hsl(190, 40%, 40%)",
-  "hsl(170, 30%, 50%)", "hsl(230, 35%, 60%)",
+  "hsl(210, 70%, 50%)",  // azul vibrante
+  "hsl(152, 60%, 40%)",  // verde
+  "hsl(25, 85%, 55%)",   // laranja
+  "hsl(340, 65%, 50%)",  // rosa/vermelho
+  "hsl(270, 55%, 55%)",  // roxo
+  "hsl(45, 80%, 50%)",   // amarelo dourado
+  "hsl(185, 60%, 45%)",  // ciano
+  "hsl(0, 70%, 55%)",    // vermelho
+  "hsl(140, 45%, 50%)",  // verde claro
+  "hsl(300, 40%, 55%)",  // magenta
 ];
 
 const TOOLTIP_STYLE = {
