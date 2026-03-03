@@ -148,10 +148,13 @@ export function LaudosChart({ laudos, mesSelecionado, onMesClick, placaDenominac
                   <Tooltip
                     cursor={false}
                     contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(214, 32%, 91%)",
+                      backgroundColor: "hsl(222, 47%, 11%)",
+                      border: "1px solid hsl(215, 16%, 47%)",
                       borderRadius: "8px",
+                      color: "hsl(210, 40%, 98%)",
                     }}
+                    labelStyle={{ color: "hsl(210, 40%, 98%)" }}
+                    itemStyle={{ color: "hsl(210, 40%, 98%)" }}
                   />
                   <Bar dataKey="total" name="Laudos" fill="hsl(210, 40%, 50%)" radius={[0, 4, 4, 0]} activeBar={{ fill: "hsl(210, 40%, 65%)" }} />
                 </BarChart>
