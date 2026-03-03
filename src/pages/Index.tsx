@@ -75,12 +75,10 @@ const Index = () => {
           <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
           {syncing ? "Sincronizando..." : "Sincronizar"}
         </Button>
-        {lastSync && (
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {lastSync}
-          </span>
-        )}
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {lastSync ? lastSync : "Nunca sincronizado"}
+        </span>
       </AppHeader>
 
       <main className="space-y-6 px-6 py-6">
