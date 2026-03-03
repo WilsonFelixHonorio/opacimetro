@@ -1,9 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Laudo, getLaudosPorMes, getVeiculosPorMarca, getVeiculosPorModelo } from "@/lib/laudos-data";
+import { Laudo, getLaudosPorMes, getLaudosPorAno, getVeiculosPorMarca, getVeiculosPorModelo } from "@/lib/laudos-data";
+import { Badge } from "@/components/ui/badge";
 
 interface LaudosChartProps {
   laudos: Laudo[];
+  mesSelecionado?: string | null;
+  onMesClick?: (mes: string | null) => void;
 }
 
 const COLORS = [
@@ -12,37 +15,86 @@ const COLORS = [
   "hsl(170, 30%, 50%)", "hsl(230, 35%, 60%)",
 ];
 
-export function LaudosChart({ laudos }: LaudosChartProps) {
+export function LaudosChart({ laudos, mesSelecionado, onMesClick }: LaudosChartProps) {
   const dadosMes = getLaudosPorMes(laudos);
+  const dadosAno = getLaudosPorAno(laudos);
   const dadosMarca = getVeiculosPorMarca(laudos);
   const dadosModelo = getVeiculosPorModelo(laudos).slice(0, 15);
 
+  const handleBarClick = (data: any) => {
+    if (data?.activeLabel) {
+      if (mesSelecionado === data.activeLabel) {
+        onMesClick?.(null);
+      } else {
+        onMesClick?.(data.activeLabel);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Laudos por mês - full width */}
-      <Card className="border-none shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Laudos por Mês</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dadosMes}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="mes" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
-              <YAxis className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(0, 0%, 100%)",
-                  border: "1px solid hsl(214, 32%, 91%)",
-                  borderRadius: "8px",
-                }}
-              />
-              <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Laudos por mês + por ano */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="border-none shadow-lg lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Laudos por Mês</CardTitle>
+            {mesSelecionado && (
+              <Badge
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => onMesClick?.(null)}
+              >
+                Filtro: {mesSelecionado} ✕
+              </Badge>
+            )}
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-2">Clique em uma barra para filtrar a tabela</p>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dadosMes} onClick={handleBarClick} style={{ cursor: "pointer" }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="mes" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
+                <YAxis className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
+                <Tooltip
+                  cursor={false}
+                  contentStyle={{
+                    backgroundColor: "hsl(0, 0%, 100%)",
+                    border: "1px solid hsl(214, 32%, 91%)",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-base">Laudos por Ano</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dadosAno}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="ano" className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
+                <YAxis className="text-xs" tick={{ fill: "hsl(215, 16%, 47%)" }} />
+                <Tooltip
+                  cursor={false}
+                  contentStyle={{
+                    backgroundColor: "hsl(0, 0%, 100%)",
+                    border: "1px solid hsl(214, 32%, 91%)",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Bar dataKey="aprovados" name="Aprovados" fill="hsl(152, 60%, 35%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="reprovados" name="Reprovados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Marca + Modelo side by side */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -67,7 +119,7 @@ export function LaudosChart({ laudos }: LaudosChartProps) {
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip cursor={false} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -90,6 +142,7 @@ export function LaudosChart({ laudos }: LaudosChartProps) {
                   width={130}
                 />
                 <Tooltip
+                  cursor={false}
                   contentStyle={{
                     backgroundColor: "hsl(0, 0%, 100%)",
                     border: "1px solid hsl(214, 32%, 91%)",
