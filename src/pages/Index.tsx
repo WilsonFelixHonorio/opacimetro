@@ -79,10 +79,14 @@ const Index = () => {
   const stats = getStats(laudosFiltrados);
 
   const handleFilterToggle = useCallback((key: keyof ChartFilters, value: string | null) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: prev[key] === value ? null : value,
-    }));
+    setFilters((prev) => {
+      // If clicking the same value, clear all
+      if (prev[key] === value) {
+        return { mes: null, ano: null, marca: null, modelo: null };
+      }
+      // Otherwise, clear all and set only this filter
+      return { mes: null, ano: null, marca: null, modelo: null, [key]: value };
+    });
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -129,9 +133,13 @@ const Index = () => {
         </span>
       </AppHeader>
 
-      <main className="space-y-6 px-6 py-6">
+      <main className="space-y-6 px-6 py-6" onClick={(e) => {
+        // Clear filters when clicking on empty space (not on chart elements)
+        if ((e.target as HTMLElement).closest('.recharts-wrapper, [data-filter-badge]')) return;
+        if (hasActiveFilter) clearFilters();
+      }}>
         {hasActiveFilter && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap" data-filter-badge>
             <span className="text-sm text-muted-foreground">Filtros ativos:</span>
             {filters.mes && (
               <Badge variant="secondary" className="cursor-pointer" onClick={() => handleFilterToggle("mes", filters.mes)}>
