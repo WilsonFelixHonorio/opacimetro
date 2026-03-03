@@ -95,3 +95,19 @@
     font-family: 'Inter', sans-serif;
   }
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  nav, button, input {
+    display: none !important;
+  }
+  * {
+    color: black !important;
+    border-color: #ccc !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+}

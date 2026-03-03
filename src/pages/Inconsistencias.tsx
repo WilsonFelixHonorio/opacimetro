@@ -5,7 +5,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Loader2 } from "lucide-react";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Loader2, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { parseDate } from "@/lib/laudos-data";
 
 type SortKey = "equip" | "placa" | "denominacao" | "status" | "ultimoLaudo" | "resultado";
@@ -187,14 +188,25 @@ const Inconsistencias = () => {
               <AlertTriangle className="h-5 w-5 text-muted-foreground" />
               Inconsistências ({filtered.length})
             </h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar equip, placa, modelo..."
-                className="pl-9 w-[280px]"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar equip, placa, modelo..."
+                  className="pl-9 w-[280px]"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="print:hidden"
+                onClick={() => window.print()}
+                title="Imprimir"
+              >
+                <Printer className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           <div className="overflow-auto">
