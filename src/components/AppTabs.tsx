@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 const tabs = [
   { label: "Laudos", path: "/" },
   { label: "Veículos", path: "/veiculos" },
+  { label: "Inconsistências", path: "/inconsistencias" },
 ];
 
 export function AppTabs() {
