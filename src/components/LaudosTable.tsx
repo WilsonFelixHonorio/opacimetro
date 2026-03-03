@@ -9,9 +9,12 @@ import { Search, Truck, Tag, Gauge, FileText, ExternalLink, ClipboardCheck, Cale
 
 interface LaudosTableProps {
   laudos: Laudo[];
+  anoFiltro: string;
+  onAnoChange: (ano: string) => void;
+  anos: number[];
 }
 
-export function LaudosTable({ laudos }: LaudosTableProps) {
+export function LaudosTable({ laudos, anoFiltro, onAnoChange, anos }: LaudosTableProps) {
   const [search, setSearch] = useState("");
   const [filtroResultado, setFiltroResultado] = useState<string>("todos");
   const [selectedLaudo, setSelectedLaudo] = useState<Laudo | null>(null);
@@ -34,7 +37,7 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
           <Truck className="h-5 w-5 text-muted-foreground" />
           Laudos de Inspeção
         </h2>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -52,6 +55,19 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
               <SelectItem value="todos">Todos</SelectItem>
               <SelectItem value="APROVADO">Aprovado</SelectItem>
               <SelectItem value="REPROVADO">Reprovado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={anoFiltro} onValueChange={onAnoChange}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os anos</SelectItem>
+              {anos.map((ano) => (
+                <SelectItem key={ano} value={ano.toString()}>
+                  {ano}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

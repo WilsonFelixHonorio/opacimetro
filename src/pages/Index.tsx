@@ -80,26 +80,10 @@ const Index = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Select value={anoFiltro} onValueChange={(v) => { setAnoFiltro(v); setMesFiltro(null); }}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os anos</SelectItem>
-                  {anos.map((ano) => (
-                    <SelectItem key={ano} value={ano.toString()}>
-                      {ano}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
                 {syncing ? "Sincronizando..." : "Sincronizar"}
               </Button>
-              <Badge variant="outline" className="text-xs">
-                {laudosData.length} laudos
-              </Badge>
             </div>
           </div>
         </div>
@@ -118,7 +102,7 @@ const Index = () => {
 
         <LaudosChart laudos={laudosPorAno} mesSelecionado={mesFiltro} onMesClick={handleMesClick} />
 
-        <LaudosTable laudos={laudosData} />
+        <LaudosTable laudos={laudosData} anoFiltro={anoFiltro} onAnoChange={(v) => { setAnoFiltro(v); setMesFiltro(null); }} anos={anos} />
       </main>
     </div>
   );
