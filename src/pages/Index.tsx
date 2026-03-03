@@ -1,4 +1,4 @@
-import { getStats, getAnosDisponiveis, parseDate } from "@/lib/laudos-data";
+import { getStats, getAnosDisponiveis, parseDate, getMarcaFromLaudo, getModeloFromLaudo } from "@/lib/laudos-data";
 import { useLaudos } from "@/hooks/use-laudos";
 import { useVeiculos } from "@/hooks/use-veiculos";
 import { StatCard } from "@/components/StatCard";
@@ -9,14 +9,22 @@ import { ClipboardCheck, CheckCircle, XCircle, TrendingUp, RefreshCw, Loader2, C
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { Badge } from "@/components/ui/badge";
+
+export interface ChartFilters {
+  mes: string | null;
+  ano: string | null;
+  marca: string | null;
+  modelo: string | null;
+}
 
 const Index = () => {
   const { data: allLaudos = [], isLoading, refetch } = useLaudos();
   const { data: veiculos = [] } = useVeiculos();
   const [syncing, setSyncing] = useState(false);
   const [anoFiltro, setAnoFiltro] = useState<string>("todos");
-  const [mesFiltro, setMesFiltro] = useState<string | null>(null);
+  const [filters, setFilters] = useState<ChartFilters>({ mes: null, ano: null, marca: null, modelo: null });
   const [lastSync, setLastSync] = useState<string | null>(
     () => localStorage.getItem("lastSyncTime")
   );
@@ -37,21 +45,51 @@ const Index = () => {
     return allLaudos.filter((l) => parseDate(l.data).getFullYear() === ano);
   }, [allLaudos, anoFiltro]);
 
-  const laudosData = useMemo(() => {
-    if (!mesFiltro) return laudosPorAno;
-    const nomesMeses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    return laudosPorAno.filter((l) => {
-      const date = parseDate(l.data);
-      const key = `${nomesMeses[date.getMonth()]}/${date.getFullYear()}`;
-      return key === mesFiltro;
-    });
-  }, [laudosPorAno, mesFiltro]);
+  const nomesMeses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-  const stats = getStats(laudosData);
+  const laudosFiltrados = useMemo(() => {
+    let result = laudosPorAno;
 
-  const handleMesClick = useCallback((mes: string | null) => {
-    setMesFiltro(mes);
+    if (filters.mes) {
+      result = result.filter((l) => {
+        const date = parseDate(l.data);
+        const key = `${nomesMeses[date.getMonth()]}/${date.getFullYear()}`;
+        return key === filters.mes;
+      });
+    }
+
+    if (filters.ano) {
+      result = result.filter((l) => {
+        const date = parseDate(l.data);
+        return date.getFullYear().toString() === filters.ano;
+      });
+    }
+
+    if (filters.marca) {
+      result = result.filter((l) => getMarcaFromLaudo(l, placaDenominacao) === filters.marca);
+    }
+
+    if (filters.modelo) {
+      result = result.filter((l) => getModeloFromLaudo(l, placaDenominacao) === filters.modelo);
+    }
+
+    return result;
+  }, [laudosPorAno, filters, placaDenominacao]);
+
+  const stats = getStats(laudosFiltrados);
+
+  const handleFilterToggle = useCallback((key: keyof ChartFilters, value: string | null) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: prev[key] === value ? null : value,
+    }));
   }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilters({ mes: null, ano: null, marca: null, modelo: null });
+  }, []);
+
+  const hasActiveFilter = Object.values(filters).some(Boolean);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -92,6 +130,35 @@ const Index = () => {
       </AppHeader>
 
       <main className="space-y-6 px-6 py-6">
+        {hasActiveFilter && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-muted-foreground">Filtros ativos:</span>
+            {filters.mes && (
+              <Badge variant="secondary" className="cursor-pointer" onClick={() => handleFilterToggle("mes", filters.mes)}>
+                Mês: {filters.mes} ✕
+              </Badge>
+            )}
+            {filters.ano && (
+              <Badge variant="secondary" className="cursor-pointer" onClick={() => handleFilterToggle("ano", filters.ano)}>
+                Ano: {filters.ano} ✕
+              </Badge>
+            )}
+            {filters.marca && (
+              <Badge variant="secondary" className="cursor-pointer" onClick={() => handleFilterToggle("marca", filters.marca)}>
+                Marca: {filters.marca} ✕
+              </Badge>
+            )}
+            {filters.modelo && (
+              <Badge variant="secondary" className="cursor-pointer" onClick={() => handleFilterToggle("modelo", filters.modelo)}>
+                Modelo: {filters.modelo} ✕
+              </Badge>
+            )}
+            <Badge variant="outline" className="cursor-pointer" onClick={clearFilters}>
+              Limpar tudo ✕
+            </Badge>
+          </div>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Total de Laudos" value={stats.total} icon={ClipboardCheck} color="bg-primary" />
           <StatCard title="Aprovados" value={stats.aprovados} icon={CheckCircle} description={`${stats.taxaAprovacao}% de aprovação`} color="bg-emerald-600" />
@@ -99,9 +166,15 @@ const Index = () => {
           <StatCard title="Taxa de Aprovação" value={`${stats.taxaAprovacao}%`} icon={TrendingUp} color="bg-primary" />
         </div>
 
-        <LaudosChart laudos={laudosPorAno} mesSelecionado={mesFiltro} onMesClick={handleMesClick} placaDenominacao={placaDenominacao} />
+        <LaudosChart
+          laudos={laudosPorAno}
+          laudosFiltrados={laudosFiltrados}
+          filters={filters}
+          onFilterToggle={handleFilterToggle}
+          placaDenominacao={placaDenominacao}
+        />
 
-        <LaudosTable laudos={laudosData} anoFiltro={anoFiltro} onAnoChange={(v) => { setAnoFiltro(v); setMesFiltro(null); }} anos={anos} />
+        <LaudosTable laudos={laudosFiltrados} anoFiltro={anoFiltro} onAnoChange={(v) => { setAnoFiltro(v); clearFilters(); }} anos={anos} />
       </main>
     </div>
   );
