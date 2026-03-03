@@ -1,5 +1,6 @@
 import { getStats, getAnosDisponiveis, parseDate } from "@/lib/laudos-data";
 import { useLaudos } from "@/hooks/use-laudos";
+import { useVeiculos } from "@/hooks/use-veiculos";
 import { StatCard } from "@/components/StatCard";
 import { LaudosTable } from "@/components/LaudosTable";
 import { LaudosChart } from "@/components/LaudosChart";
@@ -12,12 +13,21 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 
 const Index = () => {
   const { data: allLaudos = [], isLoading, refetch } = useLaudos();
+  const { data: veiculos = [] } = useVeiculos();
   const [syncing, setSyncing] = useState(false);
   const [anoFiltro, setAnoFiltro] = useState<string>("todos");
   const [mesFiltro, setMesFiltro] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(
     () => localStorage.getItem("lastSyncTime")
   );
+
+  const placaDenominacao = useMemo(() => {
+    const map: Record<string, string> = {};
+    veiculos.forEach((v) => {
+      map[v.placa.toUpperCase()] = v.denominacao;
+    });
+    return map;
+  }, [veiculos]);
 
   const anos = useMemo(() => getAnosDisponiveis(allLaudos), [allLaudos]);
 
@@ -89,7 +99,7 @@ const Index = () => {
           <StatCard title="Taxa de Aprovação" value={`${stats.taxaAprovacao}%`} icon={TrendingUp} color="bg-primary" />
         </div>
 
-        <LaudosChart laudos={laudosPorAno} mesSelecionado={mesFiltro} onMesClick={handleMesClick} />
+        <LaudosChart laudos={laudosPorAno} mesSelecionado={mesFiltro} onMesClick={handleMesClick} placaDenominacao={placaDenominacao} />
 
         <LaudosTable laudos={laudosData} anoFiltro={anoFiltro} onAnoChange={(v) => { setAnoFiltro(v); setMesFiltro(null); }} anos={anos} />
       </main>
