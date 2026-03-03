@@ -93,11 +93,11 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
               >
                 <TableCell className="py-3">
                   <div className="flex flex-col items-center">
-                    <span className="text-lg font-bold text-primary">{l.numero}</span>
+                    <span className="text-lg font-bold" style={{ color: "hsl(217, 91%, 60%)" }}>{l.numero}</span>
                     <span className="text-xs text-muted-foreground">{l.data}</span>
                   </div>
                 </TableCell>
-                <TableCell className="max-w-[280px]">
+                <TableCell>
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate text-foreground text-sm">{l.veiculo}</span>
@@ -120,7 +120,7 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground truncate max-w-[200px]">{l.tipo}</span>
+                    <span className="text-sm text-muted-foreground">{l.tipo}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
