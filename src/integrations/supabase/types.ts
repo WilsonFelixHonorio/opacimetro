@@ -56,6 +56,54 @@ export type Database = {
         }
         Relationships: []
       }
+      veiculos: {
+        Row: {
+          ano: string
+          classe_operacional: string
+          cor: string
+          created_at: string
+          denominacao: string
+          denominacao_tipo: string
+          equip: string
+          ger_responsavel: string
+          id: string
+          placa: string
+          proprietario: string
+          serie_chassis: string
+          updated_at: string
+        }
+        Insert: {
+          ano?: string
+          classe_operacional?: string
+          cor?: string
+          created_at?: string
+          denominacao: string
+          denominacao_tipo?: string
+          equip: string
+          ger_responsavel?: string
+          id?: string
+          placa?: string
+          proprietario?: string
+          serie_chassis?: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: string
+          classe_operacional?: string
+          cor?: string
+          created_at?: string
+          denominacao?: string
+          denominacao_tipo?: string
+          equip?: string
+          ger_responsavel?: string
+          id?: string
+          placa?: string
+          proprietario?: string
+          serie_chassis?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
