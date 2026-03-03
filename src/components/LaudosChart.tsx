@@ -126,7 +126,7 @@ export function LaudosChart({ laudos, laudosFiltrados, filters, onFilterToggle, 
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip cursor={false} {...TOOLTIP_STYLE} />
+                <Tooltip cursor={false} isAnimationActive={false} {...TOOLTIP_STYLE} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
