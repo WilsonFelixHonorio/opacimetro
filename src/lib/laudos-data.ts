@@ -152,9 +152,28 @@ const MARCA_ALIASES: Record<string, string> = {
   "MBENZ": "Mercedes-Benz",
 };
 
-function normalizeMarca(raw: string): string {
+export function normalizeMarca(raw: string): string {
   const upper = raw.trim().toUpperCase();
   return MARCA_ALIASES[upper] || raw.trim();
+}
+
+export function getMarcaFromLaudo(l: Laudo, placaDenominacao?: Record<string, string>): string {
+  let marcaRaw: string;
+  if (placaDenominacao && placaDenominacao[l.placa.toUpperCase()]) {
+    marcaRaw = placaDenominacao[l.placa.toUpperCase()].split(/[\s/]/)[0];
+  } else {
+    marcaRaw = l.veiculo.split("/")[0];
+  }
+  return normalizeMarca(marcaRaw);
+}
+
+export function getModeloFromLaudo(l: Laudo, placaDenominacao?: Record<string, string>): string {
+  if (placaDenominacao && placaDenominacao[l.placa.toUpperCase()]) {
+    return placaDenominacao[l.placa.toUpperCase()];
+  }
+  const parts = l.veiculo.split("/");
+  let modelo = parts.length > 1 ? parts.slice(1).join("/").trim() : l.veiculo;
+  return modelo.split(" ").slice(0, 2).join(" ");
 }
 
 export function getVeiculosPorMarca(laudos: Laudo[], placaDenominacao?: Record<string, string>) {
