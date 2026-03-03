@@ -3,8 +3,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Laudo, SYSCON_BASE_URL } from "@/lib/laudos-data";
-import { Search, Truck, Tag, Gauge, FileText, ExternalLink } from "lucide-react";
+import { Search, Truck, Tag, Gauge, FileText, ExternalLink, ClipboardCheck, Calendar } from "lucide-react";
 
 interface LaudosTableProps {
   laudos: Laudo[];
@@ -13,6 +14,7 @@ interface LaudosTableProps {
 export function LaudosTable({ laudos }: LaudosTableProps) {
   const [search, setSearch] = useState("");
   const [filtroResultado, setFiltroResultado] = useState<string>("todos");
+  const [selectedLaudo, setSelectedLaudo] = useState<Laudo | null>(null);
 
   const filtered = useMemo(() => {
     return laudos.filter((l) => {
@@ -87,10 +89,7 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
               <TableRow
                 key={l.numero}
                 className="hover:bg-muted/30 cursor-pointer group"
-                onClick={() => {
-                  const sysconUrl = l.url || `${SYSCON_BASE_URL}`;
-                  window.open(sysconUrl, "_blank", "noopener,noreferrer");
-                }}
+                onClick={() => setSelectedLaudo(l)}
               >
                 <TableCell className="py-3">
                   <div className="flex flex-col items-center">
@@ -154,6 +153,66 @@ export function LaudosTable({ laudos }: LaudosTableProps) {
       <div className="border-t px-6 py-3 text-sm text-muted-foreground">
         {filtered.length} de {laudos.length} laudos
       </div>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedLaudo} onOpenChange={(open) => !open && setSelectedLaudo(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
+              Laudo Nº {selectedLaudo?.numero}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLaudo && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Data</p>
+                  <p className="font-medium text-foreground">{selectedLaudo.data}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Resultado</p>
+                  <Badge
+                    variant={selectedLaudo.resultado === "APROVADO" ? "default" : "destructive"}
+                    className={selectedLaudo.resultado === "APROVADO" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                  >
+                    {selectedLaudo.resultado}
+                  </Badge>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><Truck className="h-3 w-3" /> Veículo</p>
+                <p className="font-medium text-foreground">{selectedLaudo.veiculo}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3" /> Placa</p>
+                  <p className="font-mono uppercase font-medium text-foreground">{selectedLaudo.placa}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><Gauge className="h-3 w-3" /> Quilometragem</p>
+                  <p className="font-mono font-medium text-foreground">{selectedLaudo.km.toLocaleString("pt-BR")} km</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><FileText className="h-3 w-3" /> Tipo</p>
+                <p className="text-sm text-foreground">{selectedLaudo.tipo}</p>
+              </div>
+              {selectedLaudo.url && (
+                <a
+                  href={selectedLaudo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-primary hover:underline mt-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Ver no Syscon
+                </a>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
