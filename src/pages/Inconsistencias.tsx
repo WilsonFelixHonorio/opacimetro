@@ -246,6 +246,9 @@ const Inconsistencias = () => {
   const filtered = useMemo(() => {
     // Linhas com status "OK" foram corrigidas e validadas → não são inconsistência
     let data = rows.filter((r) => r.status !== "OK");
+    if (!showHidden) {
+      data = data.filter((r) => !r.oculto);
+    }
     if (search) {
       const s = search.toLowerCase();
       data = data.filter(
