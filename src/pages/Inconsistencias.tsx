@@ -118,19 +118,18 @@ const Inconsistencias = () => {
     // Aplica correção manual e, se a placa corrigida bater com um veículo
     // cadastrado, recalcula equip/denominação/status a partir da aba Veículos.
     const applyCorrection = (
-      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal">
+      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal" | "oculto" | "duplicada">
     ): InconsistenciaRow => {
       const placaOriginal = base.placa.toUpperCase();
       const c = correcoesMap[placaOriginal];
-      if (!c) return { ...base, placaOriginal, corrigido: false };
+      if (!c)
+        return { ...base, placaOriginal, corrigido: false, oculto: false, duplicada: false };
 
       const placaCorrigida = (c.placa_corrigida?.trim() || base.placa).toUpperCase();
       const veicMatch =
         veiculoPorPlaca[placaCorrigida] ||
         veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)];
 
-      // Se a placa corrigida existe na aba Veículos, recalcula status com base
-      // no laudo mais recente daquele veículo (Sem laudo / Reprovado / ok).
       let status = base.status;
       let ultimoLaudo = base.ultimoLaudo;
       let resultado = base.resultado;
@@ -145,7 +144,6 @@ const Inconsistencias = () => {
           ultimoLaudo = laudoVeic.data;
           resultado = laudoVeic.resultado;
         } else {
-          // Aprovado e cadastrado → não é mais inconsistência
           status = "OK";
           ultimoLaudo = laudoVeic.data;
           resultado = laudoVeic.resultado;
@@ -163,6 +161,8 @@ const Inconsistencias = () => {
         resultado,
         placaOriginal,
         corrigido: true,
+        oculto: !!c.oculto,
+        duplicada: false,
       };
     };
 
