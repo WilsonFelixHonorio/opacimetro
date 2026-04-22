@@ -69,21 +69,7 @@ const Inconsistencias = () => {
     return map;
   }, [correcoes]);
 
-  const applyCorrection = (
-    base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal">
-  ): InconsistenciaRow => {
-    const placaOriginal = base.placa.toUpperCase();
-    const c = correcoesMap[placaOriginal];
-    if (!c) return { ...base, placaOriginal, corrigido: false };
-    return {
-      ...base,
-      equip: c.equip_corrigido?.trim() || base.equip,
-      placa: c.placa_corrigida?.trim() || base.placa,
-      denominacao: c.denominacao_corrigida?.trim() || base.denominacao,
-      placaOriginal,
-      corrigido: true,
-    };
-  };
+  // applyCorrection é definida dentro do useMemo abaixo (precisa do índice de veículos)
 
   // Fuzzy match helpers: confusões comuns OCR (1↔I, 0↔O, 5↔S, 8↔B, 2↔Z)
   const normalizePlaca = (p: string) =>
