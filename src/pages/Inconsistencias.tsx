@@ -194,7 +194,43 @@ const Inconsistencias = () => {
     return sortDir === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
   };
 
-  const isLoading = loadingLaudos || loadingVeiculos;
+  const isLoading = loadingLaudos || loadingVeiculos || loadingCorrecoes;
+
+  const openEdit = (row: InconsistenciaRow) => {
+    setEditingRow(row);
+    setEditForm({
+      equip: row.equip === "-" ? "" : row.equip,
+      placa: row.placa,
+      denominacao: row.denominacao,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingRow) return;
+    try {
+      await upsertCorrecao.mutateAsync({
+        placa_original: editingRow.placaOriginal,
+        equip_corrigido: editForm.equip.trim() || null,
+        placa_corrigida: editForm.placa.trim() || null,
+        denominacao_corrigida: editForm.denominacao.trim() || null,
+      });
+      toast.success("Correção salva");
+      setEditingRow(null);
+    } catch (e: any) {
+      toast.error("Erro ao salvar: " + e.message);
+    }
+  };
+
+  const handleResetEdit = async () => {
+    if (!editingRow) return;
+    try {
+      await deleteCorrecao.mutateAsync(editingRow.placaOriginal);
+      toast.success("Correção removida");
+      setEditingRow(null);
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + e.message);
+    }
+  };
 
   if (isLoading) {
     return (
