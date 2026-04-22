@@ -51,6 +51,7 @@ interface InconsistenciaRow {
   corrigido: boolean;
   oculto: boolean;
   duplicada: boolean;
+  temOcultaNoGrupo: boolean;
 }
 
 const Inconsistencias = () => {
@@ -119,12 +120,20 @@ const Inconsistencias = () => {
     // Aplica correção manual e, se a placa corrigida bater com um veículo
     // cadastrado, recalcula equip/denominação/status a partir da aba Veículos.
     const applyCorrection = (
-      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal" | "oculto" | "duplicada">
+      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal" | "oculto" | "duplicada" | "temOcultaNoGrupo">
     ): InconsistenciaRow => {
       const placaOriginal = base.placa.toUpperCase();
       const c = correcoesMap[placaOriginal];
-      if (!c)
-        return { ...base, placaOriginal, corrigido: false, oculto: false, duplicada: false };
+      if (!c) {
+        return {
+          ...base,
+          placaOriginal,
+          corrigido: false,
+          oculto: false,
+          duplicada: false,
+          temOcultaNoGrupo: false,
+        };
+      }
 
       const placaCorrigida = (c.placa_corrigida?.trim() || base.placa).toUpperCase();
       const veicMatch =
@@ -164,6 +173,7 @@ const Inconsistencias = () => {
         corrigido: true,
         oculto: !!c.oculto,
         duplicada: false,
+        temOcultaNoGrupo: false,
       };
     };
 
@@ -200,54 +210,59 @@ const Inconsistencias = () => {
       }
     });
 
-    // 2. Laudos com placas que não existem no cadastro de veículos
+    // 2. Laudos fora da aba Veículos: só mantém se houver correspondência atual
+    // (exata, fuzzy ou por correção manual). Se não houver mais vínculo, considera vendido/removido.
     const placasJaAdicionadas = new Set<string>();
     laudos.forEach((l) => {
       const placa = l.placa.toUpperCase();
-      if (!placasVeiculos.has(placa) && !placasJaAdicionadas.has(placa)) {
-        placasJaAdicionadas.add(placa);
-        const laudo = laudoPorPlaca[placa];
+      if (placasVeiculos.has(placa) || placasJaAdicionadas.has(placa)) return;
 
-        // Duplo check: tenta achar o veículo correto na aba Veículos via
-        // normalização de placa (corrige confusões OCR como 1↔I, 0↔O...)
-        const matchVeic = veiculoPorPlacaNorm[normalizePlaca(placa)];
+      const correcao = correcoesMap[placa];
+      const placaCorrigida = (correcao?.placa_corrigida?.trim() || placa).toUpperCase();
+      const matchVeic =
+        veiculoPorPlaca[placaCorrigida] ||
+        veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)] ||
+        (correcao?.equip_corrigido ? veiculoPorEquip[correcao.equip_corrigido.toUpperCase().trim()] : undefined);
 
-        result.push(
-          applyCorrection({
-            equip: matchVeic?.equip || "-",
-            placa: matchVeic?.placa || l.placa,
-            denominacao: matchVeic?.denominacao || l.veiculo,
-            status: matchVeic ? "Placa divergente" : "Não cadastrado",
-            ultimoLaudo: laudo?.data || l.data,
-            resultado: laudo?.resultado || l.resultado,
-            origem: "Laudo",
-          })
-        );
-      }
+      // Se não existe mais na aba Veículos, não entra no relatório.
+      if (!matchVeic) return;
+
+      placasJaAdicionadas.add(placa);
+      const laudo = laudoPorPlaca[placa];
+
+      result.push(
+        applyCorrection({
+          equip: matchVeic.equip,
+          placa: matchVeic.placa,
+          denominacao: matchVeic.denominacao,
+          status: "Placa divergente",
+          ultimoLaudo: laudo?.data || l.data,
+          resultado: laudo?.resultado || l.resultado,
+          origem: "Laudo",
+        })
+      );
     });
 
-    // Detecta duplicadas: mesma placa normalizada aparecendo mais de uma vez (entre as visíveis).
-    // Mantém UMA como "principal" (não duplicada) — preferindo a com equip válido — e
-    // marca apenas as demais ocorrências como duplicadas.
+    // Agrupa por placa normalizada para destacar todas as duplicadas visíveis.
     const grupos: Record<string, InconsistenciaRow[]> = {};
     result.forEach((r) => {
-      if (r.oculto) return;
       const key = normalizePlaca(r.placa);
       (grupos[key] = grupos[key] || []).push(r);
     });
+
     Object.values(grupos).forEach((grupo) => {
-      if (grupo.length <= 1) return;
-      // Ordena: equip válido (≠ "-") primeiro, depois corrigido, depois mantém ordem
-      const ordenado = [...grupo].sort((a, b) => {
-        const aEquip = a.equip && a.equip !== "-" ? 0 : 1;
-        const bEquip = b.equip && b.equip !== "-" ? 0 : 1;
-        if (aEquip !== bEquip) return aEquip - bEquip;
-        return (b.corrigido ? 1 : 0) - (a.corrigido ? 1 : 0);
-      });
-      // Primeiro fica como principal; restantes viram duplicadas
-      ordenado.slice(1).forEach((r) => {
-        r.duplicada = true;
-      });
+      const visiveis = grupo.filter((r) => !r.oculto);
+      const ocultas = grupo.filter((r) => r.oculto);
+
+      if (visiveis.length > 1) {
+        visiveis.forEach((r) => {
+          r.duplicada = true;
+        });
+      }
+
+      if (visiveis.length === 1 && ocultas.length > 0) {
+        visiveis[0].temOcultaNoGrupo = true;
+      }
     });
 
     return result;
@@ -282,11 +297,47 @@ const Inconsistencias = () => {
 
   const handleToggleOcultar = async (row: InconsistenciaRow) => {
     try {
+      const groupKey = normalizePlaca(row.placa);
+      const groupRows = rows.filter((r) => normalizePlaca(r.placa) === groupKey);
+      const visibleRows = groupRows.filter((r) => !r.oculto);
+      const hiddenRows = groupRows.filter((r) => r.oculto);
+
+      if (row.oculto) {
+        await upsertCorrecao.mutateAsync({
+          placa_original: row.placaOriginal,
+          oculto: false,
+        });
+        toast.success("Linha exibida novamente");
+        return;
+      }
+
+      if (groupRows.length > 1) {
+        const extrasVisiveis = visibleRows.filter((r) => r.duplicada);
+
+        if (extrasVisiveis.length > 0) {
+          await Promise.all(
+            extrasVisiveis.map((r) =>
+              upsertCorrecao.mutateAsync({
+                placa_original: r.placaOriginal,
+                oculto: true,
+              })
+            )
+          );
+          toast.success("Linhas duplicadas ocultadas, mantendo uma visível");
+          return;
+        }
+
+        if (hiddenRows.length > 0) {
+          toast.info("Já existe apenas uma linha visível neste grupo");
+          return;
+        }
+      }
+
       await upsertCorrecao.mutateAsync({
         placa_original: row.placaOriginal,
-        oculto: !row.oculto,
+        oculto: true,
       });
-      toast.success(row.oculto ? "Linha exibida novamente" : "Linha ocultada do relatório");
+      toast.success("Linha ocultada do relatório");
     } catch (e: any) {
       toast.error("Erro: " + e.message);
     }
@@ -519,15 +570,21 @@ const Inconsistencias = () => {
                           variant="ghost"
                           size="icon"
                           className={
-                            row.oculto
+                            row.oculto || row.temOcultaNoGrupo
                               ? "h-8 w-8 text-amber-500 hover:text-amber-600"
                               : "h-8 w-8"
                           }
                           onClick={() => handleToggleOcultar(row)}
-                          title={row.oculto ? "Esta linha está oculta — clique para mostrar" : "Ocultar do relatório"}
+                          title={
+                            row.oculto
+                              ? "Esta linha está oculta — clique para mostrar"
+                              : row.temOcultaNoGrupo
+                              ? "Este grupo tem linhas ocultas e uma linha visível"
+                              : "Ocultar do relatório"
+                          }
                           disabled={upsertCorrecao.isPending}
                         >
-                          {row.oculto ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {row.oculto || row.temOcultaNoGrupo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
                     </TableCell>
