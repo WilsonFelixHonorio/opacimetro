@@ -8,6 +8,7 @@ export interface CorrecaoInconsistencia {
   placa_corrigida: string | null;
   denominacao_corrigida: string | null;
   observacao: string | null;
+  oculto: boolean;
 }
 
 export function useInconsistenciaCorrecoes() {
