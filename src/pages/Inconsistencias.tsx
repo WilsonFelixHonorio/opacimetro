@@ -53,6 +53,17 @@ interface InconsistenciaRow {
   temOcultaNoGrupo: boolean;
 }
 
+interface InconsistenciaBaseRow {
+  equip: string;
+  placa: string;
+  denominacao: string;
+  status: string;
+  ultimoLaudo: string;
+  resultado: string;
+  origem: string;
+  placaOriginalFonte: string;
+}
+
 const Inconsistencias = () => {
   const { data: laudos = [], isLoading: loadingLaudos } = useLaudos();
   const { data: veiculos = [], isLoading: loadingVeiculos } = useVeiculos();
@@ -124,10 +135,8 @@ const Inconsistencias = () => {
 
     const placasVeiculos = new Set<string>();
 
-    const applyCorrection = (
-      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal" | "oculto" | "duplicada" | "temOcultaNoGrupo">
-    ): InconsistenciaRow => {
-      const placaOriginal = base.placa.toUpperCase();
+    const applyCorrection = (base: InconsistenciaBaseRow): InconsistenciaRow => {
+      const placaOriginal = base.placaOriginalFonte.toUpperCase();
       const c = correcoesMap[placaOriginal];
       if (!c) {
         return {
@@ -198,6 +207,7 @@ const Inconsistencias = () => {
             ultimoLaudo: "-",
             resultado: "-",
             origem: "Cadastro",
+            placaOriginalFonte: v.placa,
           })
         );
       } else if (laudo.resultado === "REPROVADO") {
@@ -210,6 +220,7 @@ const Inconsistencias = () => {
             ultimoLaudo: laudo.data,
             resultado: laudo.resultado,
             origem: "Cadastro",
+            placaOriginalFonte: v.placa,
           })
         );
       }
@@ -240,6 +251,7 @@ const Inconsistencias = () => {
             ultimoLaudo: laudo?.data || l.data,
             resultado: laudo?.resultado || l.resultado,
             origem: "Laudo",
+            placaOriginalFonte: l.placa,
           })
         );
       }
