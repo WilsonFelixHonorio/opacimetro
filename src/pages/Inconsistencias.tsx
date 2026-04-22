@@ -88,10 +88,19 @@ const Inconsistencias = () => {
       .replace(/8/g, "B")
       .replace(/2/g, "Z");
 
+  const getRowKeepScore = (row: InconsistenciaRow) => {
+    let score = 0;
+    if (row.equip && row.equip !== "-") score += 4;
+    if (row.origem === "Cadastro") score += 3;
+    if (row.corrigido) score += 2;
+    if (row.status !== "Não cadastrado") score += 1;
+    if (row.denominacao && row.denominacao !== "-") score += 1;
+    return score;
+  };
+
   const rows = useMemo<InconsistenciaRow[]>(() => {
     const result: InconsistenciaRow[] = [];
 
-    // Map: placa -> most recent laudo
     const laudoPorPlaca: Record<string, { data: string; resultado: string }> = {};
     laudos.forEach((l) => {
       const placa = l.placa.toUpperCase();
@@ -101,7 +110,6 @@ const Inconsistencias = () => {
       }
     });
 
-    // Index de veículos por placa exata e por placa normalizada (fuzzy)
     const veiculoPorPlaca: Record<string, typeof veiculos[number]> = {};
     const veiculoPorPlacaNorm: Record<string, typeof veiculos[number]> = {};
     const veiculoPorEquip: Record<string, typeof veiculos[number]> = {};
@@ -117,8 +125,6 @@ const Inconsistencias = () => {
 
     const placasVeiculos = new Set<string>();
 
-    // Aplica correção manual e, se a placa corrigida bater com um veículo
-    // cadastrado, recalcula equip/denominação/status a partir da aba Veículos.
     const applyCorrection = (
       base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal" | "oculto" | "duplicada" | "temOcultaNoGrupo">
     ): InconsistenciaRow => {
@@ -138,7 +144,8 @@ const Inconsistencias = () => {
       const placaCorrigida = (c.placa_corrigida?.trim() || base.placa).toUpperCase();
       const veicMatch =
         veiculoPorPlaca[placaCorrigida] ||
-        veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)];
+        veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)] ||
+        (c.equip_corrigido ? veiculoPorEquip[c.equip_corrigido.toUpperCase().trim()] : undefined);
 
       let status = base.status;
       let ultimoLaudo = base.ultimoLaudo;
@@ -177,7 +184,6 @@ const Inconsistencias = () => {
       };
     };
 
-    // 1. Veículos sem laudo ou com laudo reprovado
     veiculos.forEach((v) => {
       const placa = v.placa.toUpperCase();
       placasVeiculos.add(placa);
@@ -210,40 +216,36 @@ const Inconsistencias = () => {
       }
     });
 
-    // 2. Laudos fora da aba Veículos: só mantém se houver correspondência atual
-    // (exata, fuzzy ou por correção manual). Se não houver mais vínculo, considera vendido/removido.
     const placasJaAdicionadas = new Set<string>();
     laudos.forEach((l) => {
       const placa = l.placa.toUpperCase();
-      if (placasVeiculos.has(placa) || placasJaAdicionadas.has(placa)) return;
+      if (!placasVeiculos.has(placa) && !placasJaAdicionadas.has(placa)) {
+        placasJaAdicionadas.add(placa);
+        const laudo = laudoPorPlaca[placa];
+        const correcao = correcoesMap[placa];
+        const placaCorrigida = (correcao?.placa_corrigida?.trim() || placa).toUpperCase();
+        const matchVeic =
+          veiculoPorPlaca[placaCorrigida] ||
+          veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)] ||
+          (correcao?.equip_corrigido
+            ? veiculoPorEquip[correcao.equip_corrigido.toUpperCase().trim()]
+            : undefined);
 
-      const correcao = correcoesMap[placa];
-      const placaCorrigida = (correcao?.placa_corrigida?.trim() || placa).toUpperCase();
-      const matchVeic =
-        veiculoPorPlaca[placaCorrigida] ||
-        veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)] ||
-        (correcao?.equip_corrigido ? veiculoPorEquip[correcao.equip_corrigido.toUpperCase().trim()] : undefined);
-
-      // Se não existe mais na aba Veículos, não entra no relatório.
-      if (!matchVeic) return;
-
-      placasJaAdicionadas.add(placa);
-      const laudo = laudoPorPlaca[placa];
-
-      result.push(
-        applyCorrection({
-          equip: matchVeic.equip,
-          placa: matchVeic.placa,
-          denominacao: matchVeic.denominacao,
-          status: "Placa divergente",
-          ultimoLaudo: laudo?.data || l.data,
-          resultado: laudo?.resultado || l.resultado,
-          origem: "Laudo",
-        })
-      );
+        result.push(
+          applyCorrection({
+            equip: matchVeic?.equip || correcao?.equip_corrigido?.trim() || "-",
+            placa: matchVeic?.placa || correcao?.placa_corrigida?.trim() || l.placa,
+            denominacao:
+              matchVeic?.denominacao || correcao?.denominacao_corrigida?.trim() || l.veiculo,
+            status: matchVeic ? "Placa divergente" : "Não cadastrado",
+            ultimoLaudo: laudo?.data || l.data,
+            resultado: laudo?.resultado || l.resultado,
+            origem: "Laudo",
+          })
+        );
+      }
     });
 
-    // Agrupa por placa normalizada para destacar todas as duplicadas visíveis.
     const grupos: Record<string, InconsistenciaRow[]> = {};
     result.forEach((r) => {
       const key = normalizePlaca(r.placa);
@@ -257,10 +259,9 @@ const Inconsistencias = () => {
       if (visiveis.length > 1) {
         visiveis.forEach((r) => {
           r.duplicada = true;
+          r.temOcultaNoGrupo = ocultas.length > 0;
         });
-      }
-
-      if (visiveis.length === 1 && ocultas.length > 0) {
+      } else if (visiveis.length === 1 && ocultas.length > 0) {
         visiveis[0].temOcultaNoGrupo = true;
       }
     });
@@ -270,7 +271,6 @@ const Inconsistencias = () => {
   }, [laudos, veiculos, correcoesMap]);
 
   const filtered = useMemo(() => {
-    // Linhas com status "OK" foram corrigidas e validadas → não são inconsistência
     let data = rows.filter((r) => r.status !== "OK");
     if (!showHidden) {
       data = data.filter((r) => !r.oculto);
@@ -300,7 +300,6 @@ const Inconsistencias = () => {
       const groupKey = normalizePlaca(row.placa);
       const groupRows = rows.filter((r) => normalizePlaca(r.placa) === groupKey);
       const visibleRows = groupRows.filter((r) => !r.oculto);
-      const hiddenRows = groupRows.filter((r) => r.oculto);
 
       if (row.oculto) {
         await upsertCorrecao.mutateAsync({
@@ -312,23 +311,28 @@ const Inconsistencias = () => {
       }
 
       if (groupRows.length > 1) {
-        const extrasVisiveis = visibleRows.filter((r) => r.duplicada);
+        if (visibleRows.length <= 1) {
+          toast.info("Sempre precisa ficar uma linha visível neste grupo");
+          return;
+        }
 
-        if (extrasVisiveis.length > 0) {
+        const principal = [...visibleRows].sort((a, b) => getRowKeepScore(b) - getRowKeepScore(a))[0];
+        const toHide = visibleRows.filter((r) => r.placaOriginal !== principal.placaOriginal);
+
+        if (toHide.length > 0) {
           await Promise.all(
-            extrasVisiveis.map((r) =>
+            toHide.map((r) =>
               upsertCorrecao.mutateAsync({
                 placa_original: r.placaOriginal,
                 oculto: true,
               })
             )
           );
-          toast.success("Linhas duplicadas ocultadas, mantendo uma visível");
-          return;
-        }
-
-        if (hiddenRows.length > 0) {
-          toast.info("Já existe apenas uma linha visível neste grupo");
+          toast.success(
+            toHide.length === 1
+              ? "Linha duplicada ocultada"
+              : "Linhas duplicadas ocultadas, mantendo uma visível"
+          );
           return;
         }
       }
