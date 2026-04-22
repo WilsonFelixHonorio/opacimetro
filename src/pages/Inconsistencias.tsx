@@ -441,7 +441,7 @@ const Inconsistencias = () => {
                       </span>
                     </TableHead>
                   ))}
-                  <TableHead className="font-semibold w-[80px] text-right print:hidden">Ações</TableHead>
+                  <TableHead className="font-semibold w-[110px] text-right print:hidden">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
