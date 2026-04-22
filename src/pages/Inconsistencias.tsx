@@ -165,12 +165,17 @@ const Inconsistencias = () => {
       if (!placasVeiculos.has(placa) && !placasJaAdicionadas.has(placa)) {
         placasJaAdicionadas.add(placa);
         const laudo = laudoPorPlaca[placa];
+
+        // Duplo check: tenta achar o veículo correto na aba Veículos via
+        // normalização de placa (corrige confusões OCR como 1↔I, 0↔O...)
+        const matchVeic = veiculoPorPlacaNorm[normalizePlaca(placa)];
+
         result.push(
           applyCorrection({
-            equip: "-",
-            placa: l.placa,
-            denominacao: l.veiculo,
-            status: "Não cadastrado",
+            equip: matchVeic?.equip || "-",
+            placa: matchVeic?.placa || l.placa,
+            denominacao: matchVeic?.denominacao || l.veiculo,
+            status: matchVeic ? "Placa divergente" : "Não cadastrado",
             ultimoLaudo: laudo?.data || l.data,
             resultado: laudo?.resultado || l.resultado,
             origem: "Laudo",
