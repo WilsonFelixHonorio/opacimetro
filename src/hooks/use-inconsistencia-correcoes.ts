@@ -29,10 +29,11 @@ export function useUpsertCorrecao() {
   return useMutation({
     mutationFn: async (input: {
       placa_original: string;
-      equip_corrigido: string | null;
-      placa_corrigida: string | null;
-      denominacao_corrigida: string | null;
+      equip_corrigido?: string | null;
+      placa_corrigida?: string | null;
+      denominacao_corrigida?: string | null;
       observacao?: string | null;
+      oculto?: boolean;
     }) => {
       const { data, error } = await supabase
         .from("inconsistencia_correcoes")
