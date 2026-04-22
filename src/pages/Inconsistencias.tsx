@@ -383,6 +383,8 @@ const Inconsistencias = () => {
                             ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25"
                             : row.status === "Não cadastrado"
                             ? "bg-blue-500/15 text-blue-700 dark:text-blue-400 hover:bg-blue-500/25"
+                            : row.status === "Placa divergente"
+                            ? "bg-purple-500/15 text-purple-700 dark:text-purple-400 hover:bg-purple-500/25"
                             : ""
                         }
                       >
