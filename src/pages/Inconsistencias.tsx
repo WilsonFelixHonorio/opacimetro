@@ -61,6 +61,30 @@ const Inconsistencias = () => {
   const [editingRow, setEditingRow] = useState<InconsistenciaRow | null>(null);
   const [editForm, setEditForm] = useState({ equip: "", placa: "", denominacao: "" });
 
+  const correcoesMap = useMemo(() => {
+    const map: Record<string, typeof correcoes[number]> = {};
+    correcoes.forEach((c) => {
+      map[c.placa_original.toUpperCase()] = c;
+    });
+    return map;
+  }, [correcoes]);
+
+  const applyCorrection = (
+    base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal">
+  ): InconsistenciaRow => {
+    const placaOriginal = base.placa.toUpperCase();
+    const c = correcoesMap[placaOriginal];
+    if (!c) return { ...base, placaOriginal, corrigido: false };
+    return {
+      ...base,
+      equip: c.equip_corrigido?.trim() || base.equip,
+      placa: c.placa_corrigida?.trim() || base.placa,
+      denominacao: c.denominacao_corrigida?.trim() || base.denominacao,
+      placaOriginal,
+      corrigido: true,
+    };
+  };
+
   const rows = useMemo<InconsistenciaRow[]>(() => {
     const result: InconsistenciaRow[] = [];
 
@@ -83,25 +107,29 @@ const Inconsistencias = () => {
       const laudo = laudoPorPlaca[placa];
 
       if (!laudo) {
-        result.push({
-          equip: v.equip,
-          placa: v.placa,
-          denominacao: v.denominacao,
-          status: "Sem laudo",
-          ultimoLaudo: "-",
-          resultado: "-",
-          origem: "Cadastro",
-        });
+        result.push(
+          applyCorrection({
+            equip: v.equip,
+            placa: v.placa,
+            denominacao: v.denominacao,
+            status: "Sem laudo",
+            ultimoLaudo: "-",
+            resultado: "-",
+            origem: "Cadastro",
+          })
+        );
       } else if (laudo.resultado === "REPROVADO") {
-        result.push({
-          equip: v.equip,
-          placa: v.placa,
-          denominacao: v.denominacao,
-          status: "Reprovado",
-          ultimoLaudo: laudo.data,
-          resultado: laudo.resultado,
-          origem: "Cadastro",
-        });
+        result.push(
+          applyCorrection({
+            equip: v.equip,
+            placa: v.placa,
+            denominacao: v.denominacao,
+            status: "Reprovado",
+            ultimoLaudo: laudo.data,
+            resultado: laudo.resultado,
+            origem: "Cadastro",
+          })
+        );
       }
     });
 
@@ -112,20 +140,23 @@ const Inconsistencias = () => {
       if (!placasVeiculos.has(placa) && !placasJaAdicionadas.has(placa)) {
         placasJaAdicionadas.add(placa);
         const laudo = laudoPorPlaca[placa];
-        result.push({
-          equip: "-",
-          placa: l.placa,
-          denominacao: l.veiculo,
-          status: "Não cadastrado",
-          ultimoLaudo: laudo?.data || l.data,
-          resultado: laudo?.resultado || l.resultado,
-          origem: "Laudo",
-        });
+        result.push(
+          applyCorrection({
+            equip: "-",
+            placa: l.placa,
+            denominacao: l.veiculo,
+            status: "Não cadastrado",
+            ultimoLaudo: laudo?.data || l.data,
+            resultado: laudo?.resultado || l.resultado,
+            origem: "Laudo",
+          })
+        );
       }
     });
 
     return result;
-  }, [laudos, veiculos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [laudos, veiculos, correcoesMap]);
 
   const filtered = useMemo(() => {
     let data = rows;
