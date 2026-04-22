@@ -267,7 +267,19 @@ const Inconsistencias = () => {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return data;
-  }, [rows, search, sortKey, sortDir]);
+  }, [rows, search, sortKey, sortDir, showHidden]);
+
+  const handleToggleOcultar = async (row: InconsistenciaRow) => {
+    try {
+      await upsertCorrecao.mutateAsync({
+        placa_original: row.placaOriginal,
+        oculto: !row.oculto,
+      });
+      toast.success(row.oculto ? "Linha exibida novamente" : "Linha ocultada do relatório");
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    }
+  };
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
