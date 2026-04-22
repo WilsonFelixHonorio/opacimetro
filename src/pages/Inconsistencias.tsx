@@ -120,12 +120,20 @@ const Inconsistencias = () => {
     // Aplica correção manual e, se a placa corrigida bater com um veículo
     // cadastrado, recalcula equip/denominação/status a partir da aba Veículos.
     const applyCorrection = (
-      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal" | "oculto" | "duplicada">
+      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal" | "oculto" | "duplicada" | "temOcultaNoGrupo">
     ): InconsistenciaRow => {
       const placaOriginal = base.placa.toUpperCase();
       const c = correcoesMap[placaOriginal];
-      if (!c)
-        return { ...base, placaOriginal, corrigido: false, oculto: false, duplicada: false };
+      if (!c) {
+        return {
+          ...base,
+          placaOriginal,
+          corrigido: false,
+          oculto: false,
+          duplicada: false,
+          temOcultaNoGrupo: false,
+        };
+      }
 
       const placaCorrigida = (c.placa_corrigida?.trim() || base.placa).toUpperCase();
       const veicMatch =
@@ -165,6 +173,7 @@ const Inconsistencias = () => {
         corrigido: true,
         oculto: !!c.oculto,
         duplicada: false,
+        temOcultaNoGrupo: false,
       };
     };
 
@@ -201,54 +210,59 @@ const Inconsistencias = () => {
       }
     });
 
-    // 2. Laudos com placas que não existem no cadastro de veículos
+    // 2. Laudos fora da aba Veículos: só mantém se houver correspondência atual
+    // (exata, fuzzy ou por correção manual). Se não houver mais vínculo, considera vendido/removido.
     const placasJaAdicionadas = new Set<string>();
     laudos.forEach((l) => {
       const placa = l.placa.toUpperCase();
-      if (!placasVeiculos.has(placa) && !placasJaAdicionadas.has(placa)) {
-        placasJaAdicionadas.add(placa);
-        const laudo = laudoPorPlaca[placa];
+      if (placasVeiculos.has(placa) || placasJaAdicionadas.has(placa)) return;
 
-        // Duplo check: tenta achar o veículo correto na aba Veículos via
-        // normalização de placa (corrige confusões OCR como 1↔I, 0↔O...)
-        const matchVeic = veiculoPorPlacaNorm[normalizePlaca(placa)];
+      const correcao = correcoesMap[placa];
+      const placaCorrigida = (correcao?.placa_corrigida?.trim() || placa).toUpperCase();
+      const matchVeic =
+        veiculoPorPlaca[placaCorrigida] ||
+        veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)] ||
+        (correcao?.equip_corrigido ? veiculoPorEquip[correcao.equip_corrigido.toUpperCase().trim()] : undefined);
 
-        result.push(
-          applyCorrection({
-            equip: matchVeic?.equip || "-",
-            placa: matchVeic?.placa || l.placa,
-            denominacao: matchVeic?.denominacao || l.veiculo,
-            status: matchVeic ? "Placa divergente" : "Não cadastrado",
-            ultimoLaudo: laudo?.data || l.data,
-            resultado: laudo?.resultado || l.resultado,
-            origem: "Laudo",
-          })
-        );
-      }
+      // Se não existe mais na aba Veículos, não entra no relatório.
+      if (!matchVeic) return;
+
+      placasJaAdicionadas.add(placa);
+      const laudo = laudoPorPlaca[placa];
+
+      result.push(
+        applyCorrection({
+          equip: matchVeic.equip,
+          placa: matchVeic.placa,
+          denominacao: matchVeic.denominacao,
+          status: "Placa divergente",
+          ultimoLaudo: laudo?.data || l.data,
+          resultado: laudo?.resultado || l.resultado,
+          origem: "Laudo",
+        })
+      );
     });
 
-    // Detecta duplicadas: mesma placa normalizada aparecendo mais de uma vez (entre as visíveis).
-    // Mantém UMA como "principal" (não duplicada) — preferindo a com equip válido — e
-    // marca apenas as demais ocorrências como duplicadas.
+    // Agrupa por placa normalizada para destacar todas as duplicadas visíveis.
     const grupos: Record<string, InconsistenciaRow[]> = {};
     result.forEach((r) => {
-      if (r.oculto) return;
       const key = normalizePlaca(r.placa);
       (grupos[key] = grupos[key] || []).push(r);
     });
+
     Object.values(grupos).forEach((grupo) => {
-      if (grupo.length <= 1) return;
-      // Ordena: equip válido (≠ "-") primeiro, depois corrigido, depois mantém ordem
-      const ordenado = [...grupo].sort((a, b) => {
-        const aEquip = a.equip && a.equip !== "-" ? 0 : 1;
-        const bEquip = b.equip && b.equip !== "-" ? 0 : 1;
-        if (aEquip !== bEquip) return aEquip - bEquip;
-        return (b.corrigido ? 1 : 0) - (a.corrigido ? 1 : 0);
-      });
-      // Primeiro fica como principal; restantes viram duplicadas
-      ordenado.slice(1).forEach((r) => {
-        r.duplicada = true;
-      });
+      const visiveis = grupo.filter((r) => !r.oculto);
+      const ocultas = grupo.filter((r) => r.oculto);
+
+      if (visiveis.length > 1) {
+        visiveis.forEach((r) => {
+          r.duplicada = true;
+        });
+      }
+
+      if (visiveis.length === 1 && ocultas.length > 0) {
+        visiveis[0].temOcultaNoGrupo = true;
+      }
     });
 
     return result;
