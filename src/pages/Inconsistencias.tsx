@@ -225,6 +225,19 @@ const Inconsistencias = () => {
       }
     });
 
+    // Detecta duplicadas: mesma placa normalizada visíveis (não ocultas) aparecendo mais de uma vez
+    const visiveis = result.filter((r) => !r.oculto);
+    const contagem: Record<string, number> = {};
+    visiveis.forEach((r) => {
+      const key = normalizePlaca(r.placa);
+      contagem[key] = (contagem[key] || 0) + 1;
+    });
+    result.forEach((r) => {
+      if (!r.oculto && contagem[normalizePlaca(r.placa)] > 1) {
+        r.duplicada = true;
+      }
+    });
+
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [laudos, veiculos, correcoesMap]);
