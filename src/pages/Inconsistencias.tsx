@@ -64,6 +64,7 @@ const Inconsistencias = () => {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [editingRow, setEditingRow] = useState<InconsistenciaRow | null>(null);
   const [editForm, setEditForm] = useState({ equip: "", placa: "", denominacao: "" });
+  const [showHidden, setShowHidden] = useState(false);
 
   const correcoesMap = useMemo(() => {
     const map: Record<string, typeof correcoes[number]> = {};
