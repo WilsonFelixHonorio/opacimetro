@@ -1,0 +1,1 @@
+UPDATE public.inconsistencia_correcoes SET oculto = false WHERE oculto = true;
