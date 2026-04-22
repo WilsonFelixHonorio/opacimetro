@@ -226,7 +226,8 @@ const Inconsistencias = () => {
   }, [laudos, veiculos, correcoesMap]);
 
   const filtered = useMemo(() => {
-    let data = rows;
+    // Linhas com status "OK" foram corrigidas e validadas → não são inconsistência
+    let data = rows.filter((r) => r.status !== "OK");
     if (search) {
       const s = search.toLowerCase();
       data = data.filter(
