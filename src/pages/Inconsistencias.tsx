@@ -29,8 +29,7 @@ import {
   Printer,
   Pencil,
   RotateCcw,
-  Eye,
-  EyeOff,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseDate } from "@/lib/laudos-data";
@@ -295,55 +294,20 @@ const Inconsistencias = () => {
     return data;
   }, [rows, search, sortKey, sortDir, showHidden]);
 
-  const handleToggleOcultar = async (row: InconsistenciaRow) => {
+  const handleApagar = async (row: InconsistenciaRow) => {
+    const confirmar = window.confirm(
+      `Apagar esta linha do relatório?\n\nEquip: ${row.equip}\nPlaca: ${row.placa}\nDenominação: ${row.denominacao}\n\nEla deixará de aparecer nas inconsistências.`
+    );
+    if (!confirmar) return;
+
     try {
-      const groupKey = normalizePlaca(row.placa);
-      const groupRows = rows.filter((r) => normalizePlaca(r.placa) === groupKey);
-      const visibleRows = groupRows.filter((r) => !r.oculto);
-
-      if (row.oculto) {
-        await upsertCorrecao.mutateAsync({
-          placa_original: row.placaOriginal,
-          oculto: false,
-        });
-        toast.success("Linha exibida novamente");
-        return;
-      }
-
-      if (groupRows.length > 1) {
-        if (visibleRows.length <= 1) {
-          toast.info("Sempre precisa ficar uma linha visível neste grupo");
-          return;
-        }
-
-        const principal = [...visibleRows].sort((a, b) => getRowKeepScore(b) - getRowKeepScore(a))[0];
-        const toHide = visibleRows.filter((r) => r.placaOriginal !== principal.placaOriginal);
-
-        if (toHide.length > 0) {
-          await Promise.all(
-            toHide.map((r) =>
-              upsertCorrecao.mutateAsync({
-                placa_original: r.placaOriginal,
-                oculto: true,
-              })
-            )
-          );
-          toast.success(
-            toHide.length === 1
-              ? "Linha duplicada ocultada"
-              : "Linhas duplicadas ocultadas, mantendo uma visível"
-          );
-          return;
-        }
-      }
-
       await upsertCorrecao.mutateAsync({
         placa_original: row.placaOriginal,
         oculto: true,
       });
-      toast.success("Linha ocultada do relatório");
+      toast.success("Linha apagada do relatório");
     } catch (e: any) {
-      toast.error("Erro: " + e.message);
+      toast.error("Erro ao apagar: " + e.message);
     }
   };
 
@@ -465,15 +429,6 @@ const Inconsistencias = () => {
                 />
               </div>
               <Button
-                variant={showHidden ? "default" : "outline"}
-                size="icon"
-                className="print:hidden"
-                onClick={() => setShowHidden((v) => !v)}
-                title={showHidden ? "Esconder linhas ocultas" : "Mostrar linhas ocultas"}
-              >
-                {showHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </Button>
-              <Button
                 variant="outline"
                 size="icon"
                 className="print:hidden"
@@ -573,22 +528,12 @@ const Inconsistencias = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={
-                            row.oculto || row.temOcultaNoGrupo
-                              ? "h-8 w-8 text-amber-500 hover:text-amber-600"
-                              : "h-8 w-8"
-                          }
-                          onClick={() => handleToggleOcultar(row)}
-                          title={
-                            row.oculto
-                              ? "Esta linha está oculta — clique para mostrar"
-                              : row.temOcultaNoGrupo
-                              ? "Este grupo tem linhas ocultas e uma linha visível"
-                              : "Ocultar do relatório"
-                          }
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleApagar(row)}
+                          title="Apagar do relatório"
                           disabled={upsertCorrecao.isPending}
                         >
-                          {row.oculto || row.temOcultaNoGrupo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
