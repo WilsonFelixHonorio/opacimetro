@@ -289,7 +289,7 @@ const Inconsistencias = () => {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return data;
-  }, [rows, search, sortKey, sortDir, showHidden]);
+  }, [rows, search, sortKey, sortDir]);
 
   const handleApagar = async (row: InconsistenciaRow) => {
     const confirmar = window.confirm(
