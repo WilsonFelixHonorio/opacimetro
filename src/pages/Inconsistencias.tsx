@@ -226,17 +226,28 @@ const Inconsistencias = () => {
       }
     });
 
-    // Detecta duplicadas: mesma placa normalizada visíveis (não ocultas) aparecendo mais de uma vez
-    const visiveis = result.filter((r) => !r.oculto);
-    const contagem: Record<string, number> = {};
-    visiveis.forEach((r) => {
-      const key = normalizePlaca(r.placa);
-      contagem[key] = (contagem[key] || 0) + 1;
-    });
+    // Detecta duplicadas: mesma placa normalizada aparecendo mais de uma vez (entre as visíveis).
+    // Mantém UMA como "principal" (não duplicada) — preferindo a com equip válido — e
+    // marca apenas as demais ocorrências como duplicadas.
+    const grupos: Record<string, InconsistenciaRow[]> = {};
     result.forEach((r) => {
-      if (!r.oculto && contagem[normalizePlaca(r.placa)] > 1) {
+      if (r.oculto) return;
+      const key = normalizePlaca(r.placa);
+      (grupos[key] = grupos[key] || []).push(r);
+    });
+    Object.values(grupos).forEach((grupo) => {
+      if (grupo.length <= 1) return;
+      // Ordena: equip válido (≠ "-") primeiro, depois corrigido, depois mantém ordem
+      const ordenado = [...grupo].sort((a, b) => {
+        const aEquip = a.equip && a.equip !== "-" ? 0 : 1;
+        const bEquip = b.equip && b.equip !== "-" ? 0 : 1;
+        if (aEquip !== bEquip) return aEquip - bEquip;
+        return (b.corrigido ? 1 : 0) - (a.corrigido ? 1 : 0);
+      });
+      // Primeiro fica como principal; restantes viram duplicadas
+      ordenado.slice(1).forEach((r) => {
         r.duplicada = true;
-      }
+      });
     });
 
     return result;
