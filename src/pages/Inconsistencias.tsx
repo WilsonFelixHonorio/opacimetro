@@ -51,6 +51,7 @@ interface InconsistenciaRow {
   corrigido: boolean;
   oculto: boolean;
   duplicada: boolean;
+  temOcultaNoGrupo: boolean;
 }
 
 const Inconsistencias = () => {
