@@ -494,15 +494,31 @@ const Inconsistencias = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right print:hidden">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => openEdit(row)}
-                        title="Editar"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openEdit(row)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={
+                            row.oculto
+                              ? "h-8 w-8 text-amber-500 hover:text-amber-600"
+                              : "h-8 w-8"
+                          }
+                          onClick={() => handleToggleOcultar(row)}
+                          title={row.oculto ? "Esta linha está oculta — clique para mostrar" : "Ocultar do relatório"}
+                          disabled={upsertCorrecao.isPending}
+                        >
+                          {row.oculto ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
