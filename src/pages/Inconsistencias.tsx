@@ -446,7 +446,16 @@ const Inconsistencias = () => {
               </TableHeader>
               <TableBody>
                 {filtered.map((row, i) => (
-                  <TableRow key={`${row.placaOriginal}-${i}`} className="hover:bg-muted/30">
+                  <TableRow
+                    key={`${row.placaOriginal}-${i}`}
+                    className={
+                      row.oculto
+                        ? "opacity-50 bg-muted/40 hover:bg-muted/50"
+                        : row.duplicada
+                        ? "bg-orange-500/10 hover:bg-orange-500/20 dark:bg-orange-500/15"
+                        : "hover:bg-muted/30"
+                    }
+                  >
                     <TableCell className="font-mono text-sm">
                       {row.equip}
                       {row.corrigido && (
