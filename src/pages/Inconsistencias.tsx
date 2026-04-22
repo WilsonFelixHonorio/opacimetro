@@ -559,16 +559,7 @@ const Inconsistencias = () => {
             </Table>
           </div>
           <div className="border-t px-6 py-3 text-sm text-muted-foreground">
-            {(() => {
-              const totalInconsistencias = rows.filter((r) => r.status !== "OK").length;
-              const ocultos = totalInconsistencias - rows.filter((r) => r.status !== "OK" && !r.oculto).length;
-              return (
-                <>
-                  {filtered.length} de {totalInconsistencias} registros
-                  {ocultos > 0 && ` (${ocultos} oculto${ocultos > 1 ? "s" : ""})`}
-                </>
-              );
-            })()}
+            {filtered.length} de {rows.filter((r) => r.status !== "OK").length} registros
           </div>
         </div>
       </main>
