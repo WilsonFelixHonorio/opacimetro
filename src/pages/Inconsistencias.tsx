@@ -29,6 +29,8 @@ import {
   Printer,
   Pencil,
   RotateCcw,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseDate } from "@/lib/laudos-data";
@@ -47,6 +49,8 @@ interface InconsistenciaRow {
   origem: string;
   placaOriginal: string;
   corrigido: boolean;
+  oculto: boolean;
+  duplicada: boolean;
 }
 
 const Inconsistencias = () => {
@@ -60,6 +64,7 @@ const Inconsistencias = () => {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [editingRow, setEditingRow] = useState<InconsistenciaRow | null>(null);
   const [editForm, setEditForm] = useState({ equip: "", placa: "", denominacao: "" });
+  const [showHidden, setShowHidden] = useState(false);
 
   const correcoesMap = useMemo(() => {
     const map: Record<string, typeof correcoes[number]> = {};
@@ -114,19 +119,18 @@ const Inconsistencias = () => {
     // Aplica correção manual e, se a placa corrigida bater com um veículo
     // cadastrado, recalcula equip/denominação/status a partir da aba Veículos.
     const applyCorrection = (
-      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal">
+      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal" | "oculto" | "duplicada">
     ): InconsistenciaRow => {
       const placaOriginal = base.placa.toUpperCase();
       const c = correcoesMap[placaOriginal];
-      if (!c) return { ...base, placaOriginal, corrigido: false };
+      if (!c)
+        return { ...base, placaOriginal, corrigido: false, oculto: false, duplicada: false };
 
       const placaCorrigida = (c.placa_corrigida?.trim() || base.placa).toUpperCase();
       const veicMatch =
         veiculoPorPlaca[placaCorrigida] ||
         veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)];
 
-      // Se a placa corrigida existe na aba Veículos, recalcula status com base
-      // no laudo mais recente daquele veículo (Sem laudo / Reprovado / ok).
       let status = base.status;
       let ultimoLaudo = base.ultimoLaudo;
       let resultado = base.resultado;
@@ -141,7 +145,6 @@ const Inconsistencias = () => {
           ultimoLaudo = laudoVeic.data;
           resultado = laudoVeic.resultado;
         } else {
-          // Aprovado e cadastrado → não é mais inconsistência
           status = "OK";
           ultimoLaudo = laudoVeic.data;
           resultado = laudoVeic.resultado;
@@ -159,6 +162,8 @@ const Inconsistencias = () => {
         resultado,
         placaOriginal,
         corrigido: true,
+        oculto: !!c.oculto,
+        duplicada: false,
       };
     };
 
@@ -221,6 +226,19 @@ const Inconsistencias = () => {
       }
     });
 
+    // Detecta duplicadas: mesma placa normalizada visíveis (não ocultas) aparecendo mais de uma vez
+    const visiveis = result.filter((r) => !r.oculto);
+    const contagem: Record<string, number> = {};
+    visiveis.forEach((r) => {
+      const key = normalizePlaca(r.placa);
+      contagem[key] = (contagem[key] || 0) + 1;
+    });
+    result.forEach((r) => {
+      if (!r.oculto && contagem[normalizePlaca(r.placa)] > 1) {
+        r.duplicada = true;
+      }
+    });
+
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [laudos, veiculos, correcoesMap]);
@@ -228,6 +246,9 @@ const Inconsistencias = () => {
   const filtered = useMemo(() => {
     // Linhas com status "OK" foram corrigidas e validadas → não são inconsistência
     let data = rows.filter((r) => r.status !== "OK");
+    if (!showHidden) {
+      data = data.filter((r) => !r.oculto);
+    }
     if (search) {
       const s = search.toLowerCase();
       data = data.filter(
@@ -246,7 +267,19 @@ const Inconsistencias = () => {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return data;
-  }, [rows, search, sortKey, sortDir]);
+  }, [rows, search, sortKey, sortDir, showHidden]);
+
+  const handleToggleOcultar = async (row: InconsistenciaRow) => {
+    try {
+      await upsertCorrecao.mutateAsync({
+        placa_original: row.placaOriginal,
+        oculto: !row.oculto,
+      });
+      toast.success(row.oculto ? "Linha exibida novamente" : "Linha ocultada do relatório");
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    }
+  };
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -366,6 +399,15 @@ const Inconsistencias = () => {
                 />
               </div>
               <Button
+                variant={showHidden ? "default" : "outline"}
+                size="icon"
+                className="print:hidden"
+                onClick={() => setShowHidden((v) => !v)}
+                title={showHidden ? "Esconder linhas ocultas" : "Mostrar linhas ocultas"}
+              >
+                {showHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              </Button>
+              <Button
                 variant="outline"
                 size="icon"
                 className="print:hidden"
@@ -399,12 +441,21 @@ const Inconsistencias = () => {
                       </span>
                     </TableHead>
                   ))}
-                  <TableHead className="font-semibold w-[80px] text-right print:hidden">Ações</TableHead>
+                  <TableHead className="font-semibold w-[110px] text-right print:hidden">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((row, i) => (
-                  <TableRow key={`${row.placaOriginal}-${i}`} className="hover:bg-muted/30">
+                  <TableRow
+                    key={`${row.placaOriginal}-${i}`}
+                    className={
+                      row.oculto
+                        ? "opacity-50 bg-muted/40 hover:bg-muted/50"
+                        : row.duplicada
+                        ? "bg-orange-500/10 hover:bg-orange-500/20 dark:bg-orange-500/15"
+                        : "hover:bg-muted/30"
+                    }
+                  >
                     <TableCell className="font-mono text-sm">
                       {row.equip}
                       {row.corrigido && (
@@ -443,15 +494,31 @@ const Inconsistencias = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right print:hidden">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => openEdit(row)}
-                        title="Editar"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openEdit(row)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={
+                            row.oculto
+                              ? "h-8 w-8 text-amber-500 hover:text-amber-600"
+                              : "h-8 w-8"
+                          }
+                          onClick={() => handleToggleOcultar(row)}
+                          title={row.oculto ? "Esta linha está oculta — clique para mostrar" : "Ocultar do relatório"}
+                          disabled={upsertCorrecao.isPending}
+                        >
+                          {row.oculto ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

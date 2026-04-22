@@ -21,6 +21,7 @@ export type Database = {
           equip_corrigido: string | null
           id: string
           observacao: string | null
+          oculto: boolean
           placa_corrigida: string | null
           placa_original: string
           updated_at: string
@@ -31,6 +32,7 @@ export type Database = {
           equip_corrigido?: string | null
           id?: string
           observacao?: string | null
+          oculto?: boolean
           placa_corrigida?: string | null
           placa_original: string
           updated_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           equip_corrigido?: string | null
           id?: string
           observacao?: string | null
+          oculto?: boolean
           placa_corrigida?: string | null
           placa_original?: string
           updated_at?: string
