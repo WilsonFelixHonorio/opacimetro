@@ -1,13 +1,38 @@
 import { useMemo, useState } from "react";
 import { useLaudos } from "@/hooks/use-laudos";
 import { useVeiculos } from "@/hooks/use-veiculos";
+import {
+  useInconsistenciaCorrecoes,
+  useUpsertCorrecao,
+  useDeleteCorrecao,
+} from "@/hooks/use-inconsistencia-correcoes";
 import { AppHeader } from "@/components/AppHeader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Loader2, Printer } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  AlertTriangle,
+  Loader2,
+  Printer,
+  Pencil,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseDate } from "@/lib/laudos-data";
+import { toast } from "sonner";
 
 type SortKey = "equip" | "placa" | "denominacao" | "status" | "ultimoLaudo" | "resultado";
 type SortDir = "asc" | "desc";
@@ -20,14 +45,21 @@ interface InconsistenciaRow {
   ultimoLaudo: string;
   resultado: string;
   origem: string;
+  placaOriginal: string;
+  corrigido: boolean;
 }
 
 const Inconsistencias = () => {
   const { data: laudos = [], isLoading: loadingLaudos } = useLaudos();
   const { data: veiculos = [], isLoading: loadingVeiculos } = useVeiculos();
+  const { data: correcoes = [], isLoading: loadingCorrecoes } = useInconsistenciaCorrecoes();
+  const upsertCorrecao = useUpsertCorrecao();
+  const deleteCorrecao = useDeleteCorrecao();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [editingRow, setEditingRow] = useState<InconsistenciaRow | null>(null);
+  const [editForm, setEditForm] = useState({ equip: "", placa: "", denominacao: "" });
 
   const rows = useMemo<InconsistenciaRow[]>(() => {
     const result: InconsistenciaRow[] = [];
