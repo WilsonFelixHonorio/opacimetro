@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      inconsistencia_correcoes: {
+        Row: {
+          created_at: string
+          denominacao_corrigida: string | null
+          equip_corrigido: string | null
+          id: string
+          observacao: string | null
+          placa_corrigida: string | null
+          placa_original: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          denominacao_corrigida?: string | null
+          equip_corrigido?: string | null
+          id?: string
+          observacao?: string | null
+          placa_corrigida?: string | null
+          placa_original: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          denominacao_corrigida?: string | null
+          equip_corrigido?: string | null
+          id?: string
+          observacao?: string | null
+          placa_corrigida?: string | null
+          placa_original?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       laudos: {
         Row: {
           created_at: string

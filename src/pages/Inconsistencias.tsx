@@ -1,13 +1,38 @@
 import { useMemo, useState } from "react";
 import { useLaudos } from "@/hooks/use-laudos";
 import { useVeiculos } from "@/hooks/use-veiculos";
+import {
+  useInconsistenciaCorrecoes,
+  useUpsertCorrecao,
+  useDeleteCorrecao,
+} from "@/hooks/use-inconsistencia-correcoes";
 import { AppHeader } from "@/components/AppHeader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Loader2, Printer } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  AlertTriangle,
+  Loader2,
+  Printer,
+  Pencil,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseDate } from "@/lib/laudos-data";
+import { toast } from "sonner";
 
 type SortKey = "equip" | "placa" | "denominacao" | "status" | "ultimoLaudo" | "resultado";
 type SortDir = "asc" | "desc";
@@ -20,14 +45,45 @@ interface InconsistenciaRow {
   ultimoLaudo: string;
   resultado: string;
   origem: string;
+  placaOriginal: string;
+  corrigido: boolean;
 }
 
 const Inconsistencias = () => {
   const { data: laudos = [], isLoading: loadingLaudos } = useLaudos();
   const { data: veiculos = [], isLoading: loadingVeiculos } = useVeiculos();
+  const { data: correcoes = [], isLoading: loadingCorrecoes } = useInconsistenciaCorrecoes();
+  const upsertCorrecao = useUpsertCorrecao();
+  const deleteCorrecao = useDeleteCorrecao();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [editingRow, setEditingRow] = useState<InconsistenciaRow | null>(null);
+  const [editForm, setEditForm] = useState({ equip: "", placa: "", denominacao: "" });
+
+  const correcoesMap = useMemo(() => {
+    const map: Record<string, typeof correcoes[number]> = {};
+    correcoes.forEach((c) => {
+      map[c.placa_original.toUpperCase()] = c;
+    });
+    return map;
+  }, [correcoes]);
+
+  const applyCorrection = (
+    base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal">
+  ): InconsistenciaRow => {
+    const placaOriginal = base.placa.toUpperCase();
+    const c = correcoesMap[placaOriginal];
+    if (!c) return { ...base, placaOriginal, corrigido: false };
+    return {
+      ...base,
+      equip: c.equip_corrigido?.trim() || base.equip,
+      placa: c.placa_corrigida?.trim() || base.placa,
+      denominacao: c.denominacao_corrigida?.trim() || base.denominacao,
+      placaOriginal,
+      corrigido: true,
+    };
+  };
 
   const rows = useMemo<InconsistenciaRow[]>(() => {
     const result: InconsistenciaRow[] = [];
@@ -51,25 +107,29 @@ const Inconsistencias = () => {
       const laudo = laudoPorPlaca[placa];
 
       if (!laudo) {
-        result.push({
-          equip: v.equip,
-          placa: v.placa,
-          denominacao: v.denominacao,
-          status: "Sem laudo",
-          ultimoLaudo: "-",
-          resultado: "-",
-          origem: "Cadastro",
-        });
+        result.push(
+          applyCorrection({
+            equip: v.equip,
+            placa: v.placa,
+            denominacao: v.denominacao,
+            status: "Sem laudo",
+            ultimoLaudo: "-",
+            resultado: "-",
+            origem: "Cadastro",
+          })
+        );
       } else if (laudo.resultado === "REPROVADO") {
-        result.push({
-          equip: v.equip,
-          placa: v.placa,
-          denominacao: v.denominacao,
-          status: "Reprovado",
-          ultimoLaudo: laudo.data,
-          resultado: laudo.resultado,
-          origem: "Cadastro",
-        });
+        result.push(
+          applyCorrection({
+            equip: v.equip,
+            placa: v.placa,
+            denominacao: v.denominacao,
+            status: "Reprovado",
+            ultimoLaudo: laudo.data,
+            resultado: laudo.resultado,
+            origem: "Cadastro",
+          })
+        );
       }
     });
 
@@ -80,20 +140,23 @@ const Inconsistencias = () => {
       if (!placasVeiculos.has(placa) && !placasJaAdicionadas.has(placa)) {
         placasJaAdicionadas.add(placa);
         const laudo = laudoPorPlaca[placa];
-        result.push({
-          equip: "-",
-          placa: l.placa,
-          denominacao: l.veiculo,
-          status: "Não cadastrado",
-          ultimoLaudo: laudo?.data || l.data,
-          resultado: laudo?.resultado || l.resultado,
-          origem: "Laudo",
-        });
+        result.push(
+          applyCorrection({
+            equip: "-",
+            placa: l.placa,
+            denominacao: l.veiculo,
+            status: "Não cadastrado",
+            ultimoLaudo: laudo?.data || l.data,
+            resultado: laudo?.resultado || l.resultado,
+            origem: "Laudo",
+          })
+        );
       }
     });
 
     return result;
-  }, [laudos, veiculos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [laudos, veiculos, correcoesMap]);
 
   const filtered = useMemo(() => {
     let data = rows;
@@ -131,7 +194,43 @@ const Inconsistencias = () => {
     return sortDir === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
   };
 
-  const isLoading = loadingLaudos || loadingVeiculos;
+  const isLoading = loadingLaudos || loadingVeiculos || loadingCorrecoes;
+
+  const openEdit = (row: InconsistenciaRow) => {
+    setEditingRow(row);
+    setEditForm({
+      equip: row.equip === "-" ? "" : row.equip,
+      placa: row.placa,
+      denominacao: row.denominacao,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingRow) return;
+    try {
+      await upsertCorrecao.mutateAsync({
+        placa_original: editingRow.placaOriginal,
+        equip_corrigido: editForm.equip.trim() || null,
+        placa_corrigida: editForm.placa.trim() || null,
+        denominacao_corrigida: editForm.denominacao.trim() || null,
+      });
+      toast.success("Correção salva");
+      setEditingRow(null);
+    } catch (e: any) {
+      toast.error("Erro ao salvar: " + e.message);
+    }
+  };
+
+  const handleResetEdit = async () => {
+    if (!editingRow) return;
+    try {
+      await deleteCorrecao.mutateAsync(editingRow.placaOriginal);
+      toast.success("Correção removida");
+      setEditingRow(null);
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + e.message);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -232,12 +331,18 @@ const Inconsistencias = () => {
                       </span>
                     </TableHead>
                   ))}
+                  <TableHead className="font-semibold w-[80px] text-right print:hidden">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((row, i) => (
-                  <TableRow key={`${row.placa}-${i}`} className="hover:bg-muted/30">
-                    <TableCell className="font-mono text-sm">{row.equip}</TableCell>
+                  <TableRow key={`${row.placaOriginal}-${i}`} className="hover:bg-muted/30">
+                    <TableCell className="font-mono text-sm">
+                      {row.equip}
+                      {row.corrigido && (
+                        <span className="ml-1 text-[10px] text-primary print:hidden" title="Dado corrigido manualmente">●</span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-mono uppercase text-sm">{row.placa}</TableCell>
                     <TableCell className="text-sm">{row.denominacao}</TableCell>
                     <TableCell>
@@ -267,11 +372,22 @@ const Inconsistencias = () => {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
+                    <TableCell className="text-right print:hidden">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => openEdit(row)}
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Nenhuma inconsistência encontrada
                     </TableCell>
                   </TableRow>
@@ -284,6 +400,69 @@ const Inconsistencias = () => {
           </div>
         </div>
       </main>
+
+      <Dialog open={!!editingRow} onOpenChange={(o) => !o && setEditingRow(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar inconsistência</DialogTitle>
+            <DialogDescription>
+              Corrija os dados que vêm errados da base Syscon. Os laudos originais não serão alterados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-equip">Equip.</Label>
+              <Input
+                id="edit-equip"
+                value={editForm.equip}
+                onChange={(e) => setEditForm((f) => ({ ...f, equip: e.target.value }))}
+                placeholder="Número de frota"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-placa">Placa</Label>
+              <Input
+                id="edit-placa"
+                value={editForm.placa}
+                onChange={(e) => setEditForm((f) => ({ ...f, placa: e.target.value.toUpperCase() }))}
+                className="uppercase"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-denominacao">Denominação</Label>
+              <Input
+                id="edit-denominacao"
+                value={editForm.denominacao}
+                onChange={(e) => setEditForm((f) => ({ ...f, denominacao: e.target.value }))}
+              />
+            </div>
+            {editingRow?.corrigido && (
+              <p className="text-xs text-muted-foreground">
+                Placa original (Syscon): <span className="font-mono">{editingRow.placaOriginal}</span>
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            {editingRow?.corrigido && (
+              <Button
+                variant="outline"
+                onClick={handleResetEdit}
+                disabled={deleteCorrecao.isPending}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Restaurar original
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => setEditingRow(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={upsertCorrecao.isPending}>
+              {upsertCorrecao.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
