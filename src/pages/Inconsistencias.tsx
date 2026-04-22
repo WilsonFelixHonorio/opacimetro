@@ -85,6 +85,17 @@ const Inconsistencias = () => {
     };
   };
 
+  // Fuzzy match helpers: confusões comuns OCR (1↔I, 0↔O, 5↔S, 8↔B, 2↔Z)
+  const normalizePlaca = (p: string) =>
+    p
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .replace(/1/g, "I")
+      .replace(/0/g, "O")
+      .replace(/5/g, "S")
+      .replace(/8/g, "B")
+      .replace(/2/g, "Z");
+
   const rows = useMemo<InconsistenciaRow[]>(() => {
     const result: InconsistenciaRow[] = [];
 
@@ -96,6 +107,20 @@ const Inconsistencias = () => {
       if (!existing || parseDate(l.data) > parseDate(existing.data)) {
         laudoPorPlaca[placa] = { data: l.data, resultado: l.resultado };
       }
+    });
+
+    // Index de veículos por placa exata e por placa normalizada (fuzzy)
+    const veiculoPorPlaca: Record<string, typeof veiculos[number]> = {};
+    const veiculoPorPlacaNorm: Record<string, typeof veiculos[number]> = {};
+    const veiculoPorEquip: Record<string, typeof veiculos[number]> = {};
+    veiculos.forEach((v) => {
+      const placa = v.placa.toUpperCase().trim();
+      if (placa) {
+        veiculoPorPlaca[placa] = v;
+        veiculoPorPlacaNorm[normalizePlaca(placa)] = v;
+      }
+      const equip = v.equip.toUpperCase().trim();
+      if (equip) veiculoPorEquip[equip] = v;
     });
 
     const placasVeiculos = new Set<string>();
@@ -140,12 +165,17 @@ const Inconsistencias = () => {
       if (!placasVeiculos.has(placa) && !placasJaAdicionadas.has(placa)) {
         placasJaAdicionadas.add(placa);
         const laudo = laudoPorPlaca[placa];
+
+        // Duplo check: tenta achar o veículo correto na aba Veículos via
+        // normalização de placa (corrige confusões OCR como 1↔I, 0↔O...)
+        const matchVeic = veiculoPorPlacaNorm[normalizePlaca(placa)];
+
         result.push(
           applyCorrection({
-            equip: "-",
-            placa: l.placa,
-            denominacao: l.veiculo,
-            status: "Não cadastrado",
+            equip: matchVeic?.equip || "-",
+            placa: matchVeic?.placa || l.placa,
+            denominacao: matchVeic?.denominacao || l.veiculo,
+            status: matchVeic ? "Placa divergente" : "Não cadastrado",
             ultimoLaudo: laudo?.data || l.data,
             resultado: laudo?.resultado || l.resultado,
             origem: "Laudo",
@@ -353,6 +383,8 @@ const Inconsistencias = () => {
                             ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25"
                             : row.status === "Não cadastrado"
                             ? "bg-blue-500/15 text-blue-700 dark:text-blue-400 hover:bg-blue-500/25"
+                            : row.status === "Placa divergente"
+                            ? "bg-purple-500/15 text-purple-700 dark:text-purple-400 hover:bg-purple-500/25"
                             : ""
                         }
                       >
