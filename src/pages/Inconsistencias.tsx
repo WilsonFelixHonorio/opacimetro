@@ -297,11 +297,47 @@ const Inconsistencias = () => {
 
   const handleToggleOcultar = async (row: InconsistenciaRow) => {
     try {
+      const groupKey = normalizePlaca(row.placa);
+      const groupRows = rows.filter((r) => normalizePlaca(r.placa) === groupKey);
+      const visibleRows = groupRows.filter((r) => !r.oculto);
+      const hiddenRows = groupRows.filter((r) => r.oculto);
+
+      if (row.oculto) {
+        await upsertCorrecao.mutateAsync({
+          placa_original: row.placaOriginal,
+          oculto: false,
+        });
+        toast.success("Linha exibida novamente");
+        return;
+      }
+
+      if (groupRows.length > 1) {
+        const extrasVisiveis = visibleRows.filter((r) => r.duplicada);
+
+        if (extrasVisiveis.length > 0) {
+          await Promise.all(
+            extrasVisiveis.map((r) =>
+              upsertCorrecao.mutateAsync({
+                placa_original: r.placaOriginal,
+                oculto: true,
+              })
+            )
+          );
+          toast.success("Linhas duplicadas ocultadas, mantendo uma visível");
+          return;
+        }
+
+        if (hiddenRows.length > 0) {
+          toast.info("Já existe apenas uma linha visível neste grupo");
+          return;
+        }
+      }
+
       await upsertCorrecao.mutateAsync({
         placa_original: row.placaOriginal,
-        oculto: !row.oculto,
+        oculto: true,
       });
-      toast.success(row.oculto ? "Linha exibida novamente" : "Linha ocultada do relatório");
+      toast.success("Linha ocultada do relatório");
     } catch (e: any) {
       toast.error("Erro: " + e.message);
     }
