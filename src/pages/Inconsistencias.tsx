@@ -111,6 +111,57 @@ const Inconsistencias = () => {
 
     const placasVeiculos = new Set<string>();
 
+    // Aplica correção manual e, se a placa corrigida bater com um veículo
+    // cadastrado, recalcula equip/denominação/status a partir da aba Veículos.
+    const applyCorrection = (
+      base: Omit<InconsistenciaRow, "corrigido" | "placaOriginal">
+    ): InconsistenciaRow => {
+      const placaOriginal = base.placa.toUpperCase();
+      const c = correcoesMap[placaOriginal];
+      if (!c) return { ...base, placaOriginal, corrigido: false };
+
+      const placaCorrigida = (c.placa_corrigida?.trim() || base.placa).toUpperCase();
+      const veicMatch =
+        veiculoPorPlaca[placaCorrigida] ||
+        veiculoPorPlacaNorm[normalizePlaca(placaCorrigida)];
+
+      // Se a placa corrigida existe na aba Veículos, recalcula status com base
+      // no laudo mais recente daquele veículo (Sem laudo / Reprovado / ok).
+      let status = base.status;
+      let ultimoLaudo = base.ultimoLaudo;
+      let resultado = base.resultado;
+      if (veicMatch) {
+        const laudoVeic = laudoPorPlaca[veicMatch.placa.toUpperCase()];
+        if (!laudoVeic) {
+          status = "Sem laudo";
+          ultimoLaudo = "-";
+          resultado = "-";
+        } else if (laudoVeic.resultado === "REPROVADO") {
+          status = "Reprovado";
+          ultimoLaudo = laudoVeic.data;
+          resultado = laudoVeic.resultado;
+        } else {
+          // Aprovado e cadastrado → não é mais inconsistência
+          status = "OK";
+          ultimoLaudo = laudoVeic.data;
+          resultado = laudoVeic.resultado;
+        }
+      }
+
+      return {
+        ...base,
+        equip: c.equip_corrigido?.trim() || veicMatch?.equip || base.equip,
+        placa: c.placa_corrigida?.trim() || veicMatch?.placa || base.placa,
+        denominacao:
+          c.denominacao_corrigida?.trim() || veicMatch?.denominacao || base.denominacao,
+        status,
+        ultimoLaudo,
+        resultado,
+        placaOriginal,
+        corrigido: true,
+      };
+    };
+
     // 1. Veículos sem laudo ou com laudo reprovado
     veiculos.forEach((v) => {
       const placa = v.placa.toUpperCase();
