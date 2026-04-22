@@ -295,12 +295,18 @@ const Inconsistencias = () => {
                       </span>
                     </TableHead>
                   ))}
+                  <TableHead className="font-semibold w-[80px] text-right print:hidden">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((row, i) => (
-                  <TableRow key={`${row.placa}-${i}`} className="hover:bg-muted/30">
-                    <TableCell className="font-mono text-sm">{row.equip}</TableCell>
+                  <TableRow key={`${row.placaOriginal}-${i}`} className="hover:bg-muted/30">
+                    <TableCell className="font-mono text-sm">
+                      {row.equip}
+                      {row.corrigido && (
+                        <span className="ml-1 text-[10px] text-primary print:hidden" title="Dado corrigido manualmente">●</span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-mono uppercase text-sm">{row.placa}</TableCell>
                     <TableCell className="text-sm">{row.denominacao}</TableCell>
                     <TableCell>
@@ -330,11 +336,22 @@ const Inconsistencias = () => {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
+                    <TableCell className="text-right print:hidden">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => openEdit(row)}
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Nenhuma inconsistência encontrada
                     </TableCell>
                   </TableRow>
@@ -347,6 +364,69 @@ const Inconsistencias = () => {
           </div>
         </div>
       </main>
+
+      <Dialog open={!!editingRow} onOpenChange={(o) => !o && setEditingRow(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar inconsistência</DialogTitle>
+            <DialogDescription>
+              Corrija os dados que vêm errados da base Syscon. Os laudos originais não serão alterados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-equip">Equip.</Label>
+              <Input
+                id="edit-equip"
+                value={editForm.equip}
+                onChange={(e) => setEditForm((f) => ({ ...f, equip: e.target.value }))}
+                placeholder="Número de frota"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-placa">Placa</Label>
+              <Input
+                id="edit-placa"
+                value={editForm.placa}
+                onChange={(e) => setEditForm((f) => ({ ...f, placa: e.target.value.toUpperCase() }))}
+                className="uppercase"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-denominacao">Denominação</Label>
+              <Input
+                id="edit-denominacao"
+                value={editForm.denominacao}
+                onChange={(e) => setEditForm((f) => ({ ...f, denominacao: e.target.value }))}
+              />
+            </div>
+            {editingRow?.corrigido && (
+              <p className="text-xs text-muted-foreground">
+                Placa original (Syscon): <span className="font-mono">{editingRow.placaOriginal}</span>
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            {editingRow?.corrigido && (
+              <Button
+                variant="outline"
+                onClick={handleResetEdit}
+                disabled={deleteCorrecao.isPending}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Restaurar original
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => setEditingRow(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={upsertCorrecao.isPending}>
+              {upsertCorrecao.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
