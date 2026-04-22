@@ -85,6 +85,17 @@ const Inconsistencias = () => {
     };
   };
 
+  // Fuzzy match helpers: confusões comuns OCR (1↔I, 0↔O, 5↔S, 8↔B, 2↔Z)
+  const normalizePlaca = (p: string) =>
+    p
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .replace(/1/g, "I")
+      .replace(/0/g, "O")
+      .replace(/5/g, "S")
+      .replace(/8/g, "B")
+      .replace(/2/g, "Z");
+
   const rows = useMemo<InconsistenciaRow[]>(() => {
     const result: InconsistenciaRow[] = [];
 
@@ -96,6 +107,20 @@ const Inconsistencias = () => {
       if (!existing || parseDate(l.data) > parseDate(existing.data)) {
         laudoPorPlaca[placa] = { data: l.data, resultado: l.resultado };
       }
+    });
+
+    // Index de veículos por placa exata e por placa normalizada (fuzzy)
+    const veiculoPorPlaca: Record<string, typeof veiculos[number]> = {};
+    const veiculoPorPlacaNorm: Record<string, typeof veiculos[number]> = {};
+    const veiculoPorEquip: Record<string, typeof veiculos[number]> = {};
+    veiculos.forEach((v) => {
+      const placa = v.placa.toUpperCase().trim();
+      if (placa) {
+        veiculoPorPlaca[placa] = v;
+        veiculoPorPlacaNorm[normalizePlaca(placa)] = v;
+      }
+      const equip = v.equip.toUpperCase().trim();
+      if (equip) veiculoPorEquip[equip] = v;
     });
 
     const placasVeiculos = new Set<string>();
