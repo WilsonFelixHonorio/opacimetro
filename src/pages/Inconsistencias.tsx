@@ -64,7 +64,7 @@ const Inconsistencias = () => {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [editingRow, setEditingRow] = useState<InconsistenciaRow | null>(null);
   const [editForm, setEditForm] = useState({ equip: "", placa: "", denominacao: "" });
-  const [showHidden, setShowHidden] = useState(false);
+  
 
   const correcoesMap = useMemo(() => {
     const map: Record<string, typeof correcoes[number]> = {};
@@ -270,10 +270,7 @@ const Inconsistencias = () => {
   }, [laudos, veiculos, correcoesMap]);
 
   const filtered = useMemo(() => {
-    let data = rows.filter((r) => r.status !== "OK");
-    if (!showHidden) {
-      data = data.filter((r) => !r.oculto);
-    }
+    let data = rows.filter((r) => r.status !== "OK" && !r.oculto);
     if (search) {
       const s = search.toLowerCase();
       data = data.filter(
