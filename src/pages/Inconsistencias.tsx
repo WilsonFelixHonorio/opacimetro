@@ -29,6 +29,8 @@ import {
   Printer,
   Pencil,
   RotateCcw,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseDate } from "@/lib/laudos-data";
