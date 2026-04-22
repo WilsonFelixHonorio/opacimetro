@@ -559,7 +559,7 @@ const Inconsistencias = () => {
             </Table>
           </div>
           <div className="border-t px-6 py-3 text-sm text-muted-foreground">
-            {filtered.length} de {rows.filter((r) => r.status !== "OK").length} registros
+            {filtered.length} de {rows.filter((r) => r.status !== "OK" && !r.oculto).length} registros
           </div>
         </div>
       </main>
