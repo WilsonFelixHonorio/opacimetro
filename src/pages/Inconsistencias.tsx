@@ -399,6 +399,15 @@ const Inconsistencias = () => {
                 />
               </div>
               <Button
+                variant={showHidden ? "default" : "outline"}
+                size="icon"
+                className="print:hidden"
+                onClick={() => setShowHidden((v) => !v)}
+                title={showHidden ? "Esconder linhas ocultas" : "Mostrar linhas ocultas"}
+              >
+                {showHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              </Button>
+              <Button
                 variant="outline"
                 size="icon"
                 className="print:hidden"
