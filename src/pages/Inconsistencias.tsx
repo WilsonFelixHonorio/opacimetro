@@ -49,6 +49,8 @@ interface InconsistenciaRow {
   origem: string;
   placaOriginal: string;
   corrigido: boolean;
+  oculto: boolean;
+  duplicada: boolean;
 }
 
 const Inconsistencias = () => {
